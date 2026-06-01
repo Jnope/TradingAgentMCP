@@ -1,7 +1,7 @@
 """
 Trade Calendar - A股交易日历查询与缓存
 
-优先级：本地缓存文件 → akshare在线查询 → LLM智能判断
+优先级：本地缓存文件 → timelyre trade_calendar 表 → akshare在线查询 → LLM智能判断
 """
 
 import json
@@ -45,6 +45,43 @@ def _is_cache_fresh(cache: dict) -> bool:
     if len(date_range) < 2:
         return False
     return date_range[0] <= today <= date_range[1]
+
+
+def _query_trade_calendar_timelyre() -> Optional[dict]:
+    """从 timelyre trade_calendar 表获取交易日历"""
+    try:
+        from tradingagents.dataflows.providers.china.internal_queries import (
+            get_trade_calendar,
+        )
+
+        today = datetime.now()
+        start = (today - timedelta(days=365)).strftime("%Y-%m-%d")
+        end = (today + timedelta(days=365)).strftime("%Y-%m-%d")
+
+        df = get_trade_calendar(start, end)
+
+        if df is None or df.empty:
+            return None
+
+        trade_dates = []
+        for _, row in df.iterrows():
+            date_val = str(row.get("trade_date", "")).strip()
+            if date_val and len(date_val) >= 10:
+                trade_dates.append(date_val[:10])
+
+        trade_dates = sorted(set(trade_dates))
+
+        if not trade_dates:
+            return None
+
+        return {
+            "last_updated": today.strftime("%Y-%m-%d %H:%M:%S"),
+            "date_range": [start, end],
+            "trade_dates": trade_dates,
+        }
+    except Exception as e:
+        logger.warning(f"timelyre 查询交易日历失败: {e}")
+        return None
 
 
 def _query_trade_calendar_akshare() -> Optional[dict]:
@@ -171,6 +208,14 @@ def get_trade_dates() -> Set[str]:
         _module_cache = set(file_cache["trade_dates"])
         return _module_cache
 
+    # 优先从 timelyre 获取
+    timelyre_data = _query_trade_calendar_timelyre()
+    if timelyre_data:
+        _save_cache(timelyre_data)
+        _module_cache = set(timelyre_data["trade_dates"])
+        return _module_cache
+
+    # 降级到 akshare
     akshare_data = _query_trade_calendar_akshare()
     if akshare_data:
         _save_cache(akshare_data)

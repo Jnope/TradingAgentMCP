@@ -313,3 +313,27 @@ def get_macro_cpi() -> pd.DataFrame:
 
 def get_macro_m2() -> pd.DataFrame:
     return query("SELECT * FROM m2_supply ORDER BY datetime DESC", table="m2_supply")
+
+
+# ==================== 交易日历 ====================
+
+def get_trade_calendar(start_date: str, end_date: str, exchange: str = "SSE") -> pd.DataFrame:
+    """获取 A 股交易日历
+
+    Args:
+        start_date: 起始日期 YYYY-MM-DD（含），内部转为 'YYYY-MM-DD 00:00:00'
+        end_date: 结束日期 YYYY-MM-DD（不含），内部转为次日 'YYYY-MM-DD 00:00:00'
+        exchange: 交易所代码，默认 SSE（上交所）
+
+    Returns:
+        包含 trade_date 列的 DataFrame
+    """
+    return query(
+        f"SELECT date_format(`trade_date`,'yyyy-MM-dd') AS `trade_date` "
+        f"FROM trade_calendar "
+        f"WHERE `exchange` = '{exchange}' "
+        f"AND trade_date >= '{_date_start(start_date)}' "
+        f"AND trade_date < '{_date_end(end_date)}' "
+        f"ORDER BY trade_date",
+        table="trade_calendar",
+    )
