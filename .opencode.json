@@ -1,0 +1,24 @@
+{
+  "mcp": {
+    "tradingagents": {
+      "type": "local",
+      "command": ["tradingagents-mcp"],
+      "timeout": 0,
+      "environment": {
+        "MCP_LLM_PROVIDER": "dashscope",
+        "MCP_DEEP_THINK_LLM": "qwen-max",
+        "MCP_QUICK_THINK_LLM": "qwen-turbo",
+        "MCP_BACKEND_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "MCP_PARALLEL_ANALYSTS": "true",
+        "DASHSCOPE_API_KEY": "",
+        "OPENAI_API_KEY": "",
+        "JDBC_HTTP_PROXY": "172.18.192.74:9998",
+        "TM_REAL_CONN": "jdbc:hive2://172.18.192.75:10006",
+        "TM_DB_NAME": "meta_data",
+        "TM_DB_USER": "admin",
+        "TM_DB_PASSWORD": "admin",
+        "GUARDIAN_TOKEN": ""
+      }
+    }
+  }
+}
