@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tradingagents"
+version = "0.2.5"
+description = "TradingAgents MCP Server — AI金融交易分析多Agent框架的MCP封装"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    # MCP
+    "mcp[cli]>=1.0.0",
+    # LangChain
+    "langchain-core>=0.3.81",
+    "langchain-anthropic>=0.3.15",
+    "langchain-experimental>=0.3.4",
+    "langchain-google-genai>=4.0.0",
+    "langchain-openai>=0.3.23",
+    "langgraph>=0.4.8",
+    "langgraph-checkpoint-sqlite>=2.0.0",
+    # 数据源
+    "timelyre-api==1.4.0",
+    "akshare>=1.17.86",
+    # 通用
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "pytz>=2025.2",
+    "requests>=2.32.4",
+    "rich>=14.0.0",
+    "typer>=0.21.0",
+    "setuptools>=80.9.0",
+    "stockstats>=0.6.5",
+    "tqdm>=4.67.1",
+    "typing-extensions>=4.14.0",
+]
+
+[project.scripts]
+tradingagents = "cli.main:app"
+tradingagents-mcp = "tradingagents_mcp.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["tradingagents*", "tradingagents_mcp*"]
+
+[tool.setuptools.package-data]
+cli = ["static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "unit: fast isolated unit tests",
+    "integration: tests requiring external services",
+    "smoke: quick sanity-check tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+
+[tool.uv.sources]
+timelyre-api = { path = "/home/transwarp/Code/AI金融项目/timelyre_api-1.4.0-py3-none-any.whl" }
