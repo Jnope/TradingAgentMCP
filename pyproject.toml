@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tradingagents"
-version = "0.2.5"
-description = "TradingAgents MCP Server — AI金融交易分析多Agent框架的MCP封装"
+version = "1.0.0"
+description = "TradingAgents MCP Server — A股AI金融交易分析多Agent框架的MCP封装"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [
@@ -36,14 +36,10 @@ dependencies = [
 ]
 
 [project.scripts]
-tradingagents = "cli.main:app"
 tradingagents-mcp = "tradingagents_mcp.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["tradingagents*", "tradingagents_mcp*"]
-
-[tool.setuptools.package-data]
-cli = ["static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -192,7 +192,7 @@ class TradingAgentsGraph:
     ) -> Tuple[Optional[float], Optional[float], Optional[int]]:
         """Fetch raw and alpha return for ticker over holding_days from trade_date.
 
-        Uses timelyre internal database instead of yfinance.
+        Uses timelyre internal database for A股 price data.
         Returns (raw_return, alpha_return, actual_holding_days) or
         (None, None, None) if price data is unavailable.
         """
