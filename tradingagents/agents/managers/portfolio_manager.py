@@ -34,34 +34,34 @@ def create_portfolio_manager(llm):
 
         past_context = state.get("past_context", "")
         lessons_line = (
-            f"- Lessons from prior decisions and outcomes:\n{past_context}\n"
+            f"- 过往决策和结果的经验教训：\n{past_context}\n"
             if past_context
             else ""
         )
 
-        prompt = f"""As the Portfolio Manager, synthesize the risk analysts' debate and deliver the final trading decision.
+        prompt = f"""作为投资组合经理，请综合风险分析师的辩论，给出最终交易决策。
 
 {instrument_context}
 
 ---
 
-**Rating Scale** (use exactly one):
-- **Buy**: Strong conviction to enter or add to position
-- **Overweight**: Favorable outlook, gradually increase exposure
-- **Hold**: Maintain current position, no action needed
-- **Underweight**: Reduce exposure, take partial profits
-- **Sell**: Exit position or avoid entry
+**评级标准**（请使用以下其中之一）：
+- **买入**：强烈信心，建仓或加仓
+- **增持**：前景乐观，逐步增加敞口
+- **持有**：维持当前仓位，无需操作
+- **减持**：减少敞口，部分获利了结
+- **卖出**：清仓或回避入场
 
-**Context:**
-- Research Manager's investment plan: **{research_plan}**
-- Trader's transaction proposal: **{trader_plan}**
+**上下文：**
+- 研究主管的投资计划：**{research_plan}**
+- 交易员的交易提案：**{trader_plan}**
 {lessons_line}
-**Risk Analysts Debate History:**
+**风险分析师辩论历史：**
 {history}
 
 ---
 
-Be decisive and ground every conclusion in specific evidence from the analysts.{get_language_instruction()}"""
+请做出果断决策，每个结论都要以分析师的具体证据为依据。{get_language_instruction()}"""
 
         final_trade_decision = invoke_structured_or_freetext(
             structured_llm,

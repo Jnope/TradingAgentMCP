@@ -32,11 +32,11 @@ from pydantic import BaseModel, Field
 class PortfolioRating(str, Enum):
     """5-tier rating used by the Research Manager and Portfolio Manager."""
 
-    BUY = "Buy"
-    OVERWEIGHT = "Overweight"
-    HOLD = "Hold"
-    UNDERWEIGHT = "Underweight"
-    SELL = "Sell"
+    BUY = "买入"
+    OVERWEIGHT = "增持"
+    HOLD = "持有"
+    UNDERWEIGHT = "减持"
+    SELL = "卖出"
 
 
 class TraderAction(str, Enum):
@@ -48,9 +48,9 @@ class TraderAction(str, Enum):
     Overweight / Underweight calls happen later at the Portfolio Manager.
     """
 
-    BUY = "Buy"
-    HOLD = "Hold"
-    SELL = "Sell"
+    BUY = "买入"
+    HOLD = "持有"
+    SELL = "卖出"
 
 
 # ---------------------------------------------------------------------------
@@ -69,23 +69,20 @@ class ResearchPlan(BaseModel):
 
     recommendation: PortfolioRating = Field(
         description=(
-            "The investment recommendation. Exactly one of Buy / Overweight / "
-            "Hold / Underweight / Sell. Reserve Hold for situations where the "
-            "evidence on both sides is genuinely balanced; otherwise commit to "
-            "the side with the stronger arguments."
+            "投资建议。从买入/增持/持有/减持/卖出中精确选择一个。"
+            "仅在双方证据确实均衡时使用\"持有\"；否则应倾向于论据更强的一方。"
         ),
     )
     rationale: str = Field(
         description=(
-            "Conversational summary of the key points from both sides of the "
-            "debate, ending with which arguments led to the recommendation. "
-            "Speak naturally, as if to a teammate."
+            "用对话方式总结辩论双方的关键观点，最后说明哪些论点导致了该建议。"
+            "像对队友说话一样自然表达。"
         ),
     )
     strategic_actions: str = Field(
         description=(
-            "Concrete steps for the trader to implement the recommendation, "
-            "including position sizing guidance consistent with the rating."
+            "交易员执行该建议的具体步骤，"
+            "包括与评级一致的仓位管理指导。"
         ),
     )
 
@@ -93,11 +90,11 @@ class ResearchPlan(BaseModel):
 def render_research_plan(plan: ResearchPlan) -> str:
     """Render a ResearchPlan to markdown for storage and the trader's prompt context."""
     return "\n".join([
-        f"**Recommendation**: {plan.recommendation.value}",
+        f"**投资建议**: {plan.recommendation.value}",
         "",
-        f"**Rationale**: {plan.rationale}",
+        f"**理由**: {plan.rationale}",
         "",
-        f"**Strategic Actions**: {plan.strategic_actions}",
+        f"**战略行动**: {plan.strategic_actions}",
     ])
 
 
@@ -116,49 +113,49 @@ class TraderProposal(BaseModel):
     """
 
     action: TraderAction = Field(
-        description="The transaction direction. Exactly one of Buy / Hold / Sell.",
+        description="交易方向。从买入/持有/卖出中精确选择一个。",
     )
     reasoning: str = Field(
         description=(
-            "The case for this action, anchored in the analysts' reports and "
-            "the research plan. Two to four sentences."
+            "支持该操作的理由，以分析师报告和研究计划为依据。"
+            "两到四句话。"
         ),
     )
     entry_price: Optional[float] = Field(
         default=None,
-        description="Optional entry price target in the instrument's quote currency.",
+        description="可选的入场目标价格，以标的计价货币表示。",
     )
     stop_loss: Optional[float] = Field(
         default=None,
-        description="Optional stop-loss price in the instrument's quote currency.",
+        description="可选的止损价格，以标的计价货币表示。",
     )
     position_sizing: Optional[str] = Field(
         default=None,
-        description="Optional sizing guidance, e.g. '5% of portfolio'.",
+        description="可选的仓位管理指导，例如'组合的5%'。",
     )
 
 
 def render_trader_proposal(proposal: TraderProposal) -> str:
     """Render a TraderProposal to markdown.
 
-    The trailing ``FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL**`` line is
+    The trailing ``最终交易建议: **买入/持有/卖出**`` line is
     preserved for backward compatibility with the analyst stop-signal text
     and any external code that greps for it.
     """
     parts = [
-        f"**Action**: {proposal.action.value}",
+        f"**操作**: {proposal.action.value}",
         "",
-        f"**Reasoning**: {proposal.reasoning}",
+        f"**理由**: {proposal.reasoning}",
     ]
     if proposal.entry_price is not None:
-        parts.extend(["", f"**Entry Price**: {proposal.entry_price}"])
+        parts.extend(["", f"**入场价格**: {proposal.entry_price}"])
     if proposal.stop_loss is not None:
-        parts.extend(["", f"**Stop Loss**: {proposal.stop_loss}"])
+        parts.extend(["", f"**止损价**: {proposal.stop_loss}"])
     if proposal.position_sizing:
-        parts.extend(["", f"**Position Sizing**: {proposal.position_sizing}"])
+        parts.extend(["", f"**仓位管理**: {proposal.position_sizing}"])
     parts.extend([
         "",
-        f"FINAL TRANSACTION PROPOSAL: **{proposal.action.value.upper()}**",
+        f"最终交易建议: **{proposal.action.value.upper()}**",
     ])
     return "\n".join(parts)
 
@@ -179,30 +176,30 @@ class PortfolioDecision(BaseModel):
 
     rating: PortfolioRating = Field(
         description=(
-            "The final position rating. Exactly one of Buy / Overweight / Hold / "
-            "Underweight / Sell, picked based on the analysts' debate."
+            "最终仓位评级。从买入/增持/持有/减持/卖出中精确选择一个，"
+            "基于分析师辩论做出决定。"
         ),
     )
     executive_summary: str = Field(
         description=(
-            "A concise action plan covering entry strategy, position sizing, "
-            "key risk levels, and time horizon. Two to four sentences."
+            "简明的行动计划，涵盖入场策略、仓位管理、"
+            "关键风险水平和时间周期。两到四句话。"
         ),
     )
     investment_thesis: str = Field(
         description=(
-            "Detailed reasoning anchored in specific evidence from the analysts' "
-            "debate. If prior lessons are referenced in the prompt context, "
-            "incorporate them; otherwise rely solely on the current analysis."
+            "以分析师辩论中的具体证据为依据的详细推理。"
+            "如果提示上下文中引用了过往经验教训，请纳入；"
+            "否则仅依赖当前分析。"
         ),
     )
     price_target: Optional[float] = Field(
         default=None,
-        description="Optional target price in the instrument's quote currency.",
+        description="可选的目标价格，以标的计价货币表示。",
     )
     time_horizon: Optional[str] = Field(
         default=None,
-        description="Optional recommended holding period, e.g. '3-6 months'.",
+        description="可选的建议持有期，例如'3-6个月'。",
     )
 
 
@@ -215,14 +212,14 @@ def render_pm_decision(decision: PortfolioDecision) -> str:
     parsers and the report writers already handle.
     """
     parts = [
-        f"**Rating**: {decision.rating.value}",
+        f"**评级**: {decision.rating.value}",
         "",
-        f"**Executive Summary**: {decision.executive_summary}",
+        f"**执行摘要**: {decision.executive_summary}",
         "",
-        f"**Investment Thesis**: {decision.investment_thesis}",
+        f"**投资逻辑**: {decision.investment_thesis}",
     ]
     if decision.price_target is not None:
-        parts.extend(["", f"**Price Target**: {decision.price_target}"])
+        parts.extend(["", f"**目标价格**: {decision.price_target}"])
     if decision.time_horizon:
-        parts.extend(["", f"**Time Horizon**: {decision.time_horizon}"])
+        parts.extend(["", f"**时间周期**: {decision.time_horizon}"])
     return "\n".join(parts)

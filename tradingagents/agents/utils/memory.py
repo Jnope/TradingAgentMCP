@@ -13,8 +13,8 @@ class TradingMemoryLog:
     # HTML comment: cannot appear in LLM prose output, safe as a hard delimiter
     _SEPARATOR = "\n\n<!-- ENTRY_END -->\n\n"
     # Precompiled patterns — avoids re-compilation on every load_entries() call
-    _DECISION_RE = re.compile(r"DECISION:\n(.*?)(?=\nREFLECTION:|\Z)", re.DOTALL)
-    _REFLECTION_RE = re.compile(r"REFLECTION:\n(.*?)$", re.DOTALL)
+    _DECISION_RE = re.compile(r"决策:\n(.*?)(?=\n反思:|\Z)", re.DOTALL)
+    _REFLECTION_RE = re.compile(r"反思:\n(.*?)$", re.DOTALL)
 
     def __init__(self, config: dict = None):
         cfg = config or {}
@@ -45,7 +45,7 @@ class TradingMemoryLog:
                     return
         rating = parse_rating(final_trade_decision)
         tag = f"[{trade_date} | {ticker} | {rating} | pending]"
-        entry = f"{tag}\n\nDECISION:\n{final_trade_decision}{self._SEPARATOR}"
+        entry = f"{tag}\n\n决策:\n{final_trade_decision}{self._SEPARATOR}"
         with open(self._log_path, "a", encoding="utf-8") as f:
             f.write(entry)
 
@@ -88,10 +88,10 @@ class TradingMemoryLog:
 
         parts = []
         if same:
-            parts.append(f"Past analyses of {ticker} (most recent first):")
+            parts.append(f"{ticker} 的过往分析（最近的在前）：")
             parts.extend(self._format_full(e) for e in same)
         if cross:
-            parts.append("Recent cross-ticker lessons:")
+            parts.append("近期的跨标的经验教训：")
             parts.extend(self._format_reflection_only(e) for e in cross)
         return "\n\n".join(parts)
 
@@ -147,7 +147,7 @@ class TradingMemoryLog:
                 )
                 rest = "\n".join(lines[1:])
                 new_blocks.append(
-                    f"{new_tag}\n\n{rest.lstrip()}\n\nREFLECTION:\n{reflection}"
+                    f"{new_tag}\n\n{rest.lstrip()}\n\n反思:\n{reflection}"
                 )
                 updated = True
             else:
@@ -201,7 +201,7 @@ class TradingMemoryLog:
                     )
                     rest = "\n".join(lines[1:])
                     new_blocks.append(
-                        f"{new_tag}\n\n{rest.lstrip()}\n\nREFLECTION:\n{upd['reflection']}"
+                        f"{new_tag}\n\n{rest.lstrip()}\n\n反思:\n{upd['reflection']}"
                     )
                     del update_map[(trade_date, ticker)]
                     matched = True
@@ -286,9 +286,9 @@ class TradingMemoryLog:
         alpha = e["alpha"] or "n/a"
         holding = e["holding"] or "n/a"
         tag = f"[{e['date']} | {e['ticker']} | {e['rating']} | {raw} | {alpha} | {holding}]"
-        parts = [tag, f"DECISION:\n{e['decision']}"]
+        parts = [tag, f"决策:\n{e['decision']}"]
         if e["reflection"]:
-            parts.append(f"REFLECTION:\n{e['reflection']}")
+            parts.append(f"反思:\n{e['reflection']}")
         return "\n\n".join(parts)
 
     def _format_reflection_only(self, e: dict) -> str:

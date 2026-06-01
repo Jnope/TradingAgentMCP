@@ -23,25 +23,25 @@ from tradingagents.agents.utils.news_data_tools import (
 def get_language_instruction() -> str:
     """Return a prompt instruction for the configured output language.
 
-    Returns empty string when English (default), so no extra tokens are used.
+    Returns empty string when Chinese (default), so no extra tokens are used.
     Applied to every agent whose output reaches the saved report —
     analysts, researchers, debaters, research manager, trader, and
-    portfolio manager — so a non-English run produces a fully localized
+    portfolio manager — so a non-Chinese run produces a fully localized
     report rather than a mix of languages.
     """
     from tradingagents.dataflows.config import get_config
-    lang = get_config().get("output_language", "English")
-    if lang.strip().lower() == "english":
-        return ""
-    return f" Write your entire response in {lang}."
+    lang = get_config().get("output_language", "Chinese")
+    if lang.strip().lower() == "chinese":
+        lang = "中文"
+    return f" 请使用{lang}撰写全部回复。"
 
 
 def build_instrument_context(ticker: str, asset_type: str = "stock") -> str:
     """Describe the exact instrument so agents preserve the ticker code."""
-    instrument_label = "A股" if asset_type == "stock" else "asset"
+    instrument_label = "A股" if asset_type == "stock" else "资产"
     return (
-        f"The {instrument_label} to analyze is `{ticker}`. "
-        "Use this exact 6-digit A-share code in every tool call, report, and recommendation."
+        f"待分析的{instrument_label}为 `{ticker}`。"
+        "请在每次工具调用、报告和建议中使用此确切的6位A股代码。"
     )
 
 def create_msg_delete():

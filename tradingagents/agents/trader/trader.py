@@ -30,21 +30,20 @@ def create_trader(llm):
             {
                 "role": "system",
                 "content": (
-                    "You are a trading agent analyzing market data to make investment decisions. "
-                    "Based on your analysis, provide a specific recommendation to buy, sell, or hold. "
-                    "Anchor your reasoning in the analysts' reports and the research plan."
+                    "你是一位专业交易员，负责分析市场数据并做出投资决策。"
+                    "基于你的分析，提供具体的买入、卖出或持有建议。"
+                    "你的推理应以分析师报告和研究计划为依据。"
                     + get_language_instruction()
                 ),
             },
             {
                 "role": "user",
                 "content": (
-                    f"Based on a comprehensive analysis by a team of analysts, here is an investment "
-                    f"plan tailored for {company_name}. {instrument_context} This plan incorporates "
-                    f"insights from current technical market trends, macroeconomic indicators, and "
-                    f"social media sentiment. Use this plan as a foundation for evaluating your next "
-                    f"trading decision.\n\nProposed Investment Plan: {investment_plan}\n\n"
-                    f"Leverage these insights to make an informed and strategic decision."
+                    f"基于分析师团队的全面分析，以下是为 {company_name} 定制的投资计划。"
+                    f"{instrument_context} 该计划综合了当前技术面市场趋势、宏观经济指标和"
+                    f"社交媒体情绪的洞察。请以此计划为基础评估你的下一个交易决策。\n\n"
+                    f"投资计划：{investment_plan}\n\n"
+                    f"请利用这些洞察做出明智且战略性的决策。"
                 ),
             },
         ]
