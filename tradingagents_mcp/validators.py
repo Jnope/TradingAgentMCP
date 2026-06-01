@@ -5,7 +5,7 @@ A股参数校验、配置构建、健康检查
 import os
 import re
 from datetime import datetime, timedelta
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import pandas as pd
 
@@ -246,6 +246,43 @@ def _prev_trading_day(n: int = 1) -> datetime:
         if dt.weekday() < 5:
             count += 1
     return dt
+
+
+_SERVER_NAME = "TradingAgents"
+
+
+def build_response(
+    *,
+    tool: str,
+    success: bool,
+    error: str = "",
+    symbol: str = "",
+    market: str = "",
+    trade_date: str = "",
+    analysts_used: list = None,
+    elapsed_seconds: float = 0.0,
+    data: dict = None,
+) -> dict:
+    ctx: Dict[str, Any] = {
+        "serverName": _SERVER_NAME,
+        "tool": tool,
+        "elapsed_seconds": elapsed_seconds,
+    }
+    if symbol:
+        ctx["symbol"] = symbol
+    if market:
+        ctx["market"] = market
+    if trade_date:
+        ctx["trade_date"] = trade_date
+    if analysts_used is not None:
+        ctx["analysts_used"] = analysts_used
+
+    return {
+        "success": success,
+        "error": error,
+        "ctx": ctx,
+        "data": data or {},
+    }
 
 
 def extract_full_result(state: dict) -> dict:

@@ -52,6 +52,7 @@ def test_trading_agent():
         normalize_date,
         nearest_trade_date,
         build_config,
+        build_response,
         extract_full_result,
     )
 
@@ -77,15 +78,16 @@ def test_trading_agent():
     state = ta.propagate(symbol, trade_date)
     elapsed = round(time.time() - t0, 1)
 
-    result = {
-        "success": True,
-        "symbol": symbol,
-        "market": market,
-        "trade_date": trade_date,
-        "analysts_used": analysts,
-        "elapsed_seconds": elapsed,
-        **extract_full_result(state),
-    }
+    result = build_response(
+        tool="trading_agent",
+        success=True,
+        symbol=symbol,
+        market=market,
+        trade_date=trade_date,
+        analysts_used=analysts,
+        elapsed_seconds=elapsed,
+        data=extract_full_result(state),
+    )
 
     print(f"\n{'='*60}")
     print(f"✅ 分析完成，耗时 {elapsed}s")

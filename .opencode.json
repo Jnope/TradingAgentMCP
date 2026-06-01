@@ -22,7 +22,8 @@
         "TM_DB_NAME": "meta_data",
         "TM_DB_USER": "admin",
         "TM_DB_PASSWORD": "admin",
-        "GUARDIAN_TOKEN": "UgJRRGe7qMAKcirOQ017-TDH"
+        "GUARDIAN_TOKEN": "UgJRRGe7qMAKcirOQ017-TDH",
+        "TRADINGAGENTS_LOG_LEVEL": "INFO"
       }
     }
   }

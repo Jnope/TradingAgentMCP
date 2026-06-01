@@ -24,6 +24,7 @@ from tradingagents_mcp.validators import (
     nearest_trade_date,
     build_config,
     check_health,
+    build_response,
     extract_full_result,
 )
 from tradingagents_mcp.shared_context import get_shared_ctx
@@ -106,13 +107,7 @@ async def _run_single_analyst(
 
     report = result_state.get(report_key, "")
 
-    return {
-        "success": True,
-        "symbol": symbol,
-        "trade_date": trade_date,
-        "analyst": analyst_type,
-        "report": report,
-    }
+    return {report_key: report}
 
 
 # ============================================================
@@ -149,7 +144,7 @@ async def trading_agent(
         symbol, market = validate_symbol(symbol)
         trade_date = nearest_trade_date(normalize_date(trade_date))
     except ValueError as e:
-        return {"success": False, "error": str(e)}
+        return build_response(tool="trading_agent", success=False, error=str(e))
 
     if ctx:
         await ctx.info(f"TradingAgent 开始分析: {symbol}({market}) @ {trade_date}")
@@ -180,22 +175,26 @@ async def trading_agent(
         from tradingagents.agents.utils.rating import parse_rating
 
         elapsed = round(time.time() - t0, 1)
-        result = {
-            "success": True,
-            "symbol": symbol,
-            "market": market,
-            "trade_date": trade_date,
-            "tool": "trading_agent",
-            "analysts_used": analysts,
-            "elapsed_seconds": elapsed,
-            **extract_full_result(state),
-        }
-
-        return result
+        return build_response(
+            tool="trading_agent",
+            success=True,
+            symbol=symbol,
+            market=market,
+            trade_date=trade_date,
+            analysts_used=analysts,
+            elapsed_seconds=elapsed,
+            data=extract_full_result(state),
+        )
 
     except Exception as e:
         logger.error(f"trading_agent 分析失败: {e}", exc_info=True)
-        return {"success": False, "error": str(e), "symbol": symbol, "elapsed_seconds": round(time.time() - t0, 1)}
+        return build_response(
+            tool="trading_agent",
+            success=False,
+            error=str(e),
+            symbol=symbol,
+            elapsed_seconds=round(time.time() - t0, 1),
+        )
 
 
 # ============================================================
@@ -218,17 +217,31 @@ async def market_analyst(
         symbol, market = validate_symbol(symbol)
         trade_date = nearest_trade_date(normalize_date(trade_date))
     except ValueError as e:
-        return {"success": False, "error": str(e)}
+        return build_response(tool="market_analyst", success=False, error=str(e))
 
     t0 = time.time()
     try:
-        result = await _run_single_analyst("market", symbol, trade_date, ctx)
-        result["market"] = market
-        result["elapsed_seconds"] = round(time.time() - t0, 1)
-        return result
+        data = await _run_single_analyst("market", symbol, trade_date, ctx)
+        elapsed = round(time.time() - t0, 1)
+        return build_response(
+            tool="market_analyst",
+            success=True,
+            symbol=symbol,
+            market=market,
+            trade_date=trade_date,
+            analysts_used=["market"],
+            elapsed_seconds=elapsed,
+            data=data,
+        )
     except Exception as e:
         logger.error(f"market_analyst 失败: {e}", exc_info=True)
-        return {"success": False, "error": str(e), "symbol": symbol, "elapsed_seconds": round(time.time() - t0, 1)}
+        return build_response(
+            tool="market_analyst",
+            success=False,
+            error=str(e),
+            symbol=symbol,
+            elapsed_seconds=round(time.time() - t0, 1),
+        )
 
 
 @mcp.tool()
@@ -247,17 +260,31 @@ async def fundamentals_analyst(
         symbol, market = validate_symbol(symbol)
         trade_date = nearest_trade_date(normalize_date(trade_date))
     except ValueError as e:
-        return {"success": False, "error": str(e)}
+        return build_response(tool="fundamentals_analyst", success=False, error=str(e))
 
     t0 = time.time()
     try:
-        result = await _run_single_analyst("fundamentals", symbol, trade_date, ctx)
-        result["market"] = market
-        result["elapsed_seconds"] = round(time.time() - t0, 1)
-        return result
+        data = await _run_single_analyst("fundamentals", symbol, trade_date, ctx)
+        elapsed = round(time.time() - t0, 1)
+        return build_response(
+            tool="fundamentals_analyst",
+            success=True,
+            symbol=symbol,
+            market=market,
+            trade_date=trade_date,
+            analysts_used=["fundamentals"],
+            elapsed_seconds=elapsed,
+            data=data,
+        )
     except Exception as e:
         logger.error(f"fundamentals_analyst 失败: {e}", exc_info=True)
-        return {"success": False, "error": str(e), "symbol": symbol, "elapsed_seconds": round(time.time() - t0, 1)}
+        return build_response(
+            tool="fundamentals_analyst",
+            success=False,
+            error=str(e),
+            symbol=symbol,
+            elapsed_seconds=round(time.time() - t0, 1),
+        )
 
 
 @mcp.tool()
@@ -278,21 +305,35 @@ async def news_analyst(
         symbol, market = validate_symbol(symbol)
         trade_date = nearest_trade_date(normalize_date(trade_date))
     except ValueError as e:
-        return {"success": False, "error": str(e)}
+        return build_response(tool="news_analyst", success=False, error=str(e))
 
     t0 = time.time()
     try:
-        result = await _run_single_analyst(
+        data = await _run_single_analyst(
             "news", symbol, trade_date, ctx,
             extra_state={"news_tool_call_count": 0},
         )
-        result["market"] = market
-        result["look_back_days"] = look_back_days
-        result["elapsed_seconds"] = round(time.time() - t0, 1)
-        return result
+        data["look_back_days"] = look_back_days
+        elapsed = round(time.time() - t0, 1)
+        return build_response(
+            tool="news_analyst",
+            success=True,
+            symbol=symbol,
+            market=market,
+            trade_date=trade_date,
+            analysts_used=["news"],
+            elapsed_seconds=elapsed,
+            data=data,
+        )
     except Exception as e:
         logger.error(f"news_analyst 失败: {e}", exc_info=True)
-        return {"success": False, "error": str(e), "symbol": symbol, "elapsed_seconds": round(time.time() - t0, 1)}
+        return build_response(
+            tool="news_analyst",
+            success=False,
+            error=str(e),
+            symbol=symbol,
+            elapsed_seconds=round(time.time() - t0, 1),
+        )
 
 
 @mcp.tool()
@@ -311,17 +352,31 @@ async def social_analyst(
         symbol, market = validate_symbol(symbol)
         trade_date = nearest_trade_date(normalize_date(trade_date))
     except ValueError as e:
-        return {"success": False, "error": str(e)}
+        return build_response(tool="social_analyst", success=False, error=str(e))
 
     t0 = time.time()
     try:
-        result = await _run_single_analyst("social", symbol, trade_date, ctx)
-        result["market"] = market
-        result["elapsed_seconds"] = round(time.time() - t0, 1)
-        return result
+        data = await _run_single_analyst("social", symbol, trade_date, ctx)
+        elapsed = round(time.time() - t0, 1)
+        return build_response(
+            tool="social_analyst",
+            success=True,
+            symbol=symbol,
+            market=market,
+            trade_date=trade_date,
+            analysts_used=["social"],
+            elapsed_seconds=elapsed,
+            data=data,
+        )
     except Exception as e:
         logger.error(f"social_analyst 失败: {e}", exc_info=True)
-        return {"success": False, "error": str(e), "symbol": symbol, "elapsed_seconds": round(time.time() - t0, 1)}
+        return build_response(
+            tool="social_analyst",
+            success=False,
+            error=str(e),
+            symbol=symbol,
+            elapsed_seconds=round(time.time() - t0, 1),
+        )
 
 
 # ============================================================
@@ -334,24 +389,27 @@ async def agent_status() -> dict:
     config = build_config()
     health = check_health()
 
-    return {
-        "success": True,
-        "version": "1.0.0",
-        "health": health,
-        "supported_markets": ["A股"],
-        "available_tools": {
-            "trading_agent": "完整全流程分析（分析师→辩论→风险→决策，3-10分钟）",
-            "market_analyst": "独立市场/技术分析（~30秒）",
-            "fundamentals_analyst": "独立基本面分析（~30秒）",
-            "news_analyst": "独立新闻分析（~30秒）",
-            "social_analyst": "独立社交媒体情绪分析（~30秒）",
+    return build_response(
+        tool="agent_status",
+        success=True,
+        data={
+            "version": "1.0.0",
+            "health": health,
+            "supported_markets": ["A股"],
+            "available_tools": {
+                "trading_agent": "完整全流程分析（分析师→辩论→风险→决策，3-10分钟）",
+                "market_analyst": "独立市场/技术分析（~30秒）",
+                "fundamentals_analyst": "独立基本面分析（~30秒）",
+                "news_analyst": "独立新闻分析（~30秒）",
+                "social_analyst": "独立社交媒体情绪分析（~30秒）",
+            },
+            "data_sources": {
+                "A股行情/基本面": "timelyre 内部数据库",
+                "新闻/舆情": "akshare",
+            },
+            **config,
         },
-        "data_sources": {
-            "A股行情/基本面": "timelyre 内部数据库",
-            "新闻/舆情": "akshare",
-        },
-        **config,
-    }
+    )
 
 
 from tradingagents_mcp.prompts import register_prompts

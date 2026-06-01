@@ -26,13 +26,38 @@ metadata:
 
 ## 统一返回值结构
 
-所有工具均返回 JSON dict，通用字段：
+所有工具均返回 JSON dict，统一格式如下：
+
+```json
+{
+    "success": true,
+    "error": "",
+    "ctx": {
+        "serverName": "trading_agents",
+        "tool": "trading_agent",
+        "analysts_used": ["market", "social", "news", "fundamentals"],
+        "elapsed_seconds": 150.5,
+        "symbol": "688031",
+        "market": "A股",
+        "trade_date": "2026-05-20"
+    },
+    "data": { ... }
+}
+```
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `success` | bool | **始终检查此字段**判断调用结果 |
-| `error` | str | 仅失败时存在 |
-| `elapsed_seconds` | float | 调用耗时（秒） |
+| `error` | str | 错误信息，成功时为空字符串 |
+| `ctx` | object | 调用上下文元数据 |
+| `ctx.serverName` | str | 固定为 `"trading_agents"` |
+| `ctx.tool` | str | 调用的工具名称 |
+| `ctx.analysts_used` | list | 使用的分析师列表（agent_status 无此字段） |
+| `ctx.elapsed_seconds` | float | 调用耗时（秒） |
+| `ctx.symbol` | str | 股票代码（agent_status 无此字段） |
+| `ctx.market` | str | 市场标识（agent_status 无此字段） |
+| `ctx.trade_date` | str | 交易日期（agent_status 无此字段） |
+| `data` | object | 工具具体返回数据，各工具不同 |
 
 ## 自动规范化行为
 
@@ -153,11 +178,9 @@ Step 4: 调用工具
 - `max_risk_discuss_rounds` (可选): 风险辩论轮次，默认 1
 - `parallel_analysts` (可选): 分析师是否并行，默认读取 MCP_PARALLEL_ANALYSTS
 
-**返回值**:
+**返回值** (`data` 字段内容):
 | 字段 | 说明 |
 |------|------|
-| `market` | "A股" |
-| `analysts_used` | 使用的分析师列表 |
 | `market_report` | 市场技术分析报告 |
 | `fundamentals_report` | 基本面分析报告 |
 | `sentiment_report` | 社交情绪报告 |
@@ -183,11 +206,10 @@ trading_agent(symbol="600519", trade_date="2025-05-30")
 - `symbol` (必选): 6位A股代码
 - `trade_date` (必选): 交易日期 YYYY-MM-DD
 
-**返回值**:
+**返回值** (`data` 字段内容):
 | 字段 | 说明 |
 |------|------|
-| `report` | 技术分析报告（MA/MACD/RSI/BOLL/趋势/成交量） |
-| `market` | "A股" |
+| `market_report` | 技术分析报告（MA/MACD/RSI/BOLL/趋势/成交量） |
 
 **示例**:
 ```
@@ -202,11 +224,10 @@ market_analyst(symbol="000001", trade_date="2025-05-30")
 - `symbol` (必选): 6位A股代码
 - `trade_date` (必选): 交易日期 YYYY-MM-DD
 
-**返回值**:
+**返回值** (`data` 字段内容):
 | 字段 | 说明 |
 |------|------|
-| `report` | 基本面报告（估值/盈利/财务健康/行业对比） |
-| `market` | "A股" |
+| `fundamentals_report` | 基本面报告（估值/盈利/财务健康/行业对比） |
 
 **示例**:
 ```
@@ -222,11 +243,10 @@ fundamentals_analyst(symbol="000001", trade_date="2025-05-30")
 - `trade_date` (必选): 交易日期 YYYY-MM-DD
 - `look_back_days` (可选): 回看天数，默认 7
 
-**返回值**:
+**返回值** (`data` 字段内容):
 | 字段 | 说明 |
 |------|------|
-| `report` | 新闻分析报告（重大事件/政策影响/行业动态） |
-| `market` | "A股" |
+| `news_report` | 新闻分析报告（重大事件/政策影响/行业动态） |
 | `look_back_days` | 实际回看天数 |
 
 **示例**:
@@ -242,11 +262,10 @@ news_analyst(symbol="000001", trade_date="2025-05-30", look_back_days=14)
 - `symbol` (必选): 6位A股代码
 - `trade_date` (必选): 交易日期 YYYY-MM-DD
 
-**返回值**:
+**返回值** (`data` 字段内容):
 | 字段 | 说明 |
 |------|------|
-| `report` | 情绪分析报告（股吧舆情/投资者情绪/多空倾向） |
-| `market` | "A股" |
+| `sentiment_report` | 情绪分析报告（股吧舆情/投资者情绪/多空倾向） |
 
 **注意**: A股社交数据源有限（东方财富股吧），可能返回数据不足
 
@@ -259,7 +278,7 @@ social_analyst(symbol="000001", trade_date="2025-05-30")
 
 **参数**: 无
 
-**返回值**:
+**返回值** (`data` 字段内容):
 | 字段 | 说明 |
 |------|------|
 | `version` | MCP Server 版本 |
