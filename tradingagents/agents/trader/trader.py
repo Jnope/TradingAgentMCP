@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import functools
+import logging
 
 from langchain_core.messages import AIMessage
 
@@ -16,12 +17,15 @@ from tradingagents.agents.utils.structured import (
     invoke_structured_or_freetext,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def create_trader(llm):
     structured_llm = bind_structured(llm, TraderProposal, "Trader")
 
     def trader_node(state, name):
         company_name = state["company_of_interest"]
+        logger.info("Trader invoked: ticker=%s", company_name)
         asset_type = state.get("asset_type", "stock")
         instrument_context = build_instrument_context(company_name, asset_type)
         investment_plan = state["investment_plan"]
@@ -54,6 +58,11 @@ def create_trader(llm):
             messages,
             render_trader_proposal,
             "Trader",
+        )
+
+        logger.info(
+            "Trader completed: ticker=%s plan length=%d chars",
+            company_name, len(trader_plan),
         )
 
         return {

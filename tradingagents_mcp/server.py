@@ -26,6 +26,7 @@ from tradingagents_mcp.validators import (
     check_health,
     build_response,
     extract_full_result,
+    resolve_company_name,
 )
 from tradingagents_mcp.shared_context import get_shared_ctx
 
@@ -54,6 +55,7 @@ async def _run_single_analyst(
 ) -> dict:
     ctx_ = get_shared_ctx()
     label = _ANALYST_LABELS.get(analyst_type, analyst_type)
+    logger.info("Single analyst started: type=%s symbol=%s date=%s", label, symbol, trade_date)
 
     if ctx:
         await ctx.info(f"[1/3] 正在初始化{label}分析师...")
@@ -106,6 +108,10 @@ async def _run_single_analyst(
         await ctx.info(f"[3/3] {label}分析完成，耗时 {elapsed}s")
 
     report = result_state.get(report_key, "")
+    logger.info(
+        "Single analyst completed: type=%s symbol=%s elapsed=%.1fs report_length=%d",
+        label, symbol, elapsed, len(report) if report else 0,
+    )
 
     return {report_key: report}
 
@@ -144,10 +150,19 @@ async def trading_agent(
         symbol, market = validate_symbol(symbol)
         trade_date = nearest_trade_date(normalize_date(trade_date))
     except ValueError as e:
+        logger.warning("trading_agent validation failed: %s", e)
         return build_response(tool="trading_agent", success=False, error=str(e))
 
+    company_name = resolve_company_name(symbol)
+
+    logger.info(
+        "TradingAgent starting: symbol=%s(%s) date=%s analysts=%s debate=%d risk=%d company=%s",
+        symbol, market, trade_date, analysts, max_debate_rounds, max_risk_discuss_rounds,
+        company_name,
+    )
     if ctx:
-        await ctx.info(f"TradingAgent 开始分析: {symbol}({market}) @ {trade_date}")
+        label = f"{company_name}({symbol})" if company_name else symbol
+        await ctx.info(f"TradingAgent 开始分析: {label} @ {trade_date}")
 
     try:
         shared = get_shared_ctx()
@@ -169,17 +184,23 @@ async def trading_agent(
 
         loop = asyncio.get_event_loop()
         state = await loop.run_in_executor(
-            None, lambda: ta.propagate(symbol, trade_date)
+            None, lambda: ta.propagate(symbol, trade_date, stock_name=company_name)
         )
 
         from tradingagents.agents.utils.rating import parse_rating
 
         elapsed = round(time.time() - t0, 1)
+        rating = parse_rating(state.get("final_trade_decision", ""))
+        logger.info(
+            "TradingAgent completed: symbol=%s elapsed=%.1fs rating=%s",
+            symbol, elapsed, rating,
+        )
         return build_response(
             tool="trading_agent",
             success=True,
             symbol=symbol,
             market=market,
+            company_name=company_name,
             trade_date=trade_date,
             analysts_used=analysts,
             elapsed_seconds=elapsed,
@@ -219,6 +240,8 @@ async def market_analyst(
     except ValueError as e:
         return build_response(tool="market_analyst", success=False, error=str(e))
 
+    company_name = resolve_company_name(symbol)
+
     t0 = time.time()
     try:
         data = await _run_single_analyst("market", symbol, trade_date, ctx)
@@ -228,6 +251,7 @@ async def market_analyst(
             success=True,
             symbol=symbol,
             market=market,
+            company_name=company_name,
             trade_date=trade_date,
             analysts_used=["market"],
             elapsed_seconds=elapsed,
@@ -262,6 +286,8 @@ async def fundamentals_analyst(
     except ValueError as e:
         return build_response(tool="fundamentals_analyst", success=False, error=str(e))
 
+    company_name = resolve_company_name(symbol)
+
     t0 = time.time()
     try:
         data = await _run_single_analyst("fundamentals", symbol, trade_date, ctx)
@@ -271,6 +297,7 @@ async def fundamentals_analyst(
             success=True,
             symbol=symbol,
             market=market,
+            company_name=company_name,
             trade_date=trade_date,
             analysts_used=["fundamentals"],
             elapsed_seconds=elapsed,
@@ -307,6 +334,8 @@ async def news_analyst(
     except ValueError as e:
         return build_response(tool="news_analyst", success=False, error=str(e))
 
+    company_name = resolve_company_name(symbol)
+
     t0 = time.time()
     try:
         data = await _run_single_analyst(
@@ -320,6 +349,7 @@ async def news_analyst(
             success=True,
             symbol=symbol,
             market=market,
+            company_name=company_name,
             trade_date=trade_date,
             analysts_used=["news"],
             elapsed_seconds=elapsed,
@@ -354,6 +384,8 @@ async def social_analyst(
     except ValueError as e:
         return build_response(tool="social_analyst", success=False, error=str(e))
 
+    company_name = resolve_company_name(symbol)
+
     t0 = time.time()
     try:
         data = await _run_single_analyst("social", symbol, trade_date, ctx)
@@ -363,6 +395,7 @@ async def social_analyst(
             success=True,
             symbol=symbol,
             market=market,
+            company_name=company_name,
             trade_date=trade_date,
             analysts_used=["social"],
             elapsed_seconds=elapsed,

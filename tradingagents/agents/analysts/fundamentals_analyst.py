@@ -1,3 +1,5 @@
+import logging
+
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
@@ -10,10 +12,14 @@ from tradingagents.agents.utils.agent_utils import (
 )
 from tradingagents.dataflows.config import get_config
 
+logger = logging.getLogger(__name__)
+
 
 def create_fundamentals_analyst(llm):
     def fundamentals_analyst_node(state):
+        ticker = state["company_of_interest"]
         current_date = state["trade_date"]
+        logger.info("Fundamentals Analyst started: ticker=%s date=%s", ticker, current_date)
         instrument_context = build_instrument_context(state["company_of_interest"])
 
         tools = [
@@ -61,6 +67,16 @@ def create_fundamentals_analyst(llm):
 
         if len(result.tool_calls) == 0:
             report = result.content
+            logger.info(
+                "Fundamentals Analyst completed: ticker=%s, report length=%d chars",
+                ticker, len(report),
+            )
+        else:
+            logger.info(
+                "Fundamentals Analyst requesting %d tool calls: %s",
+                len(result.tool_calls),
+                [tc.get("name", tc.get("function", {}).get("name", "?")) for tc in result.tool_calls],
+            )
 
         return {
             "messages": [result],

@@ -1,9 +1,16 @@
+import logging
+
 from tradingagents.agents.utils.agent_utils import get_language_instruction
+
+logger = logging.getLogger(__name__)
 
 
 def create_neutral_debator(llm):
     def neutral_node(state) -> dict:
+        ticker = state["company_of_interest"]
         risk_debate_state = state["risk_debate_state"]
+        count = risk_debate_state.get("count", 0)
+        logger.info("Neutral Debator invoked: ticker=%s risk_round=%d", ticker, count)
         history = risk_debate_state.get("history", "")
         neutral_history = risk_debate_state.get("neutral_history", "")
 
@@ -34,6 +41,10 @@ def create_neutral_debator(llm):
         response = llm.invoke(prompt)
 
         argument = f"中性分析师: {response.content}"
+        logger.info(
+            "Neutral Debator completed: ticker=%s argument length=%d chars",
+            ticker, len(argument),
+        )
 
         new_risk_debate_state = {
             "history": history + "\n" + argument,

@@ -4,6 +4,7 @@
 不再依赖 Reddit/StockTwits（美股社交平台）。
 """
 
+import logging
 from datetime import datetime, timedelta
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -16,6 +17,8 @@ from tradingagents.dataflows.providers.china.akshare_news import (
     get_stock_sentiment,
     get_stock_news,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _seven_days_back(trade_date: str) -> str:
@@ -32,11 +35,18 @@ def create_sentiment_analyst(llm):
         ticker = state["company_of_interest"]
         end_date = state["trade_date"]
         start_date = _seven_days_back(end_date)
+        logger.info("Sentiment Analyst started: ticker=%s date=%s", ticker, end_date)
         instrument_context = build_instrument_context(ticker)
 
         look_back_days = max((datetime.strptime(end_date, "%Y-%m-%d") - datetime.strptime(start_date, "%Y-%m-%d")).days, 7)
+        logger.info("Sentiment Analyst fetching data: news look_back=%d days", look_back_days)
         news_block = get_news_data(ticker, end_date, look_back_days)
         sentiment_block = get_stock_sentiment(ticker)
+        logger.info(
+            "Sentiment Analyst data fetched: news=%d chars, sentiment=%d chars",
+            len(news_block) if news_block else 0,
+            len(sentiment_block) if sentiment_block else 0,
+        )
 
         system_message = _build_system_message(
             ticker=ticker,
@@ -66,6 +76,11 @@ def create_sentiment_analyst(llm):
 
         chain = prompt | llm
         result = chain.invoke(state["messages"])
+
+        logger.info(
+            "Sentiment Analyst completed: ticker=%s, report length=%d chars",
+            ticker, len(result.content),
+        )
 
         return {
             "messages": [result],

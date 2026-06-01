@@ -10,6 +10,8 @@ back gracefully to free-text generation.
 
 from __future__ import annotations
 
+import logging
+
 from tradingagents.agents.schemas import PortfolioDecision, render_pm_decision
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
@@ -20,11 +22,15 @@ from tradingagents.agents.utils.structured import (
     invoke_structured_or_freetext,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def create_portfolio_manager(llm):
     structured_llm = bind_structured(llm, PortfolioDecision, "Portfolio Manager")
 
     def portfolio_manager_node(state) -> dict:
+        ticker = state["company_of_interest"]
+        logger.info("Portfolio Manager invoked: ticker=%s", ticker)
         instrument_context = build_instrument_context(state["company_of_interest"])
 
         history = state["risk_debate_state"]["history"]
@@ -69,6 +75,13 @@ def create_portfolio_manager(llm):
             prompt,
             render_pm_decision,
             "Portfolio Manager",
+        )
+
+        logger.info(
+            "Portfolio Manager completed: ticker=%s decision length=%d chars, preview=%s",
+            ticker,
+            len(final_trade_decision),
+            final_trade_decision[:80] if final_trade_decision else "N/A",
         )
 
         new_risk_debate_state = {

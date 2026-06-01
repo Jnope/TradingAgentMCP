@@ -35,9 +35,11 @@ logger = logging.getLogger(__name__)
 
 def get_stock_data(symbol: str, start_date: str, end_date: str) -> str:
     """获取 A 股 K 线数据（timelyre stock_bar_1day）"""
+    logger.info("get_stock_data: symbol=%s start=%s end=%s", symbol, start_date, end_date)
     df = get_daily_kline(symbol, start_date, end_date)
 
     if df.empty:
+        logger.warning("get_stock_data: no data returned for %s", symbol)
         return f"未找到 {symbol} 在 {start_date} 至 {end_date} 的行情数据"
 
     df = df.rename(columns={
@@ -56,43 +58,54 @@ def get_stock_data(symbol: str, start_date: str, end_date: str) -> str:
     header += f"# 记录数: {len(df)}\n"
     header += f"# 获取时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
-    return header + df.to_csv(index=False)
+    result = header + df.to_csv(index=False)
+    logger.info("get_stock_data: symbol=%s returned %d rows, %d chars", symbol, len(df), len(result))
+    return result
 
 
 # ==================== 技术指标 ====================
 
 def get_technical_indicators(symbol: str, indicator: str, curr_date: str, look_back_days: int = 30) -> str:
     """获取技术指标数据（基于 timelyre K 线本地计算）"""
+    logger.info("get_technical_indicators: symbol=%s indicator=%s date=%s", symbol, indicator, curr_date)
     from .technical.stockstats import calculate_indicators
-    return calculate_indicators(symbol, indicator, curr_date, look_back_days)
+    result = calculate_indicators(symbol, indicator, curr_date, look_back_days)
+    logger.info("get_technical_indicators: symbol=%s result_length=%d", symbol, len(result) if result else 0)
+    return result
 
 
 # ==================== 基本面数据 ====================
 
 def get_fundamentals(symbol: str, curr_date: str) -> str:
     """获取公司基本面概览（估值+盈利+成长+分红），timelyre 数据"""
+    logger.info("get_fundamentals: symbol=%s date=%s", symbol, curr_date)
     return get_fundamentals_overview(symbol, curr_date)
 
 
 def get_balance_sheet(symbol: str, freq: str = "quarterly", curr_date: str = None) -> str:
     """获取资产负债表，timelyre balance 表"""
+    logger.info("get_balance_sheet: symbol=%s freq=%s", symbol, freq)
     return get_balance_sheet_data(symbol, freq, curr_date)
 
 
 def get_cashflow(symbol: str, freq: str = "quarterly", curr_date: str = None) -> str:
     """获取现金流量表，timelyre cashflow 表"""
+    logger.info("get_cashflow: symbol=%s freq=%s", symbol, freq)
     return get_cashflow_data(symbol, freq, curr_date)
 
 
 def get_income_statement(symbol: str, freq: str = "quarterly", curr_date: str = None) -> str:
     """获取利润表，timelyre income 表"""
+    logger.info("get_income_statement: symbol=%s freq=%s", symbol, freq)
     return get_income_statement_data(symbol, freq, curr_date)
 
 
 def get_money_flow(symbol: str, start_date: str, end_date: str) -> str:
     """获取资金流向，timelyre stock_money_flow 表"""
+    logger.info("get_money_flow: symbol=%s start=%s end=%s", symbol, start_date, end_date)
     df = _get_money_flow(symbol, start_date, end_date)
     if df.empty:
+        logger.warning("get_money_flow: no data for %s", symbol)
         return ""
     latest = df.iloc[-1]
     report = f"{symbol} 资金流向 ({latest.get('trade_day', '')})\n\n"
@@ -110,11 +123,13 @@ def get_money_flow(symbol: str, start_date: str, end_date: str) -> str:
 
 def get_news(symbol: str, curr_date: str, look_back_days: int = 7) -> str:
     """获取个股新闻（akshare）"""
+    logger.info("get_news: symbol=%s date=%s look_back=%d", symbol, curr_date, look_back_days)
     return get_stock_news(symbol, look_back_days)
 
 
 def get_global_news(curr_date: str, look_back_days: int = None, limit: int = None) -> str:
     """获取宏观财经新闻（akshare）"""
+    logger.info("get_global_news: date=%s look_back=%s limit=%s", curr_date, look_back_days, limit)
     return get_macro_news()
 
 
@@ -122,4 +137,5 @@ def get_global_news(curr_date: str, look_back_days: int = None, limit: int = Non
 
 def get_sentiment(symbol: str) -> str:
     """获取社交舆情（akshare 股吧）"""
+    logger.info("get_sentiment: symbol=%s", symbol)
     return get_stock_sentiment(symbol)

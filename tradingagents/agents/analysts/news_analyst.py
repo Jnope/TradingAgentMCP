@@ -1,3 +1,5 @@
+import logging
+
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
@@ -7,10 +9,14 @@ from tradingagents.agents.utils.agent_utils import (
 )
 from tradingagents.dataflows.config import get_config
 
+logger = logging.getLogger(__name__)
+
 
 def create_news_analyst(llm):
     def news_analyst_node(state):
+        ticker = state["company_of_interest"]
         current_date = state["trade_date"]
+        logger.info("News Analyst started: ticker=%s date=%s", ticker, current_date)
         asset_type = state.get("asset_type", "stock")
         asset_label = "公司" if asset_type == "stock" else "资产"
         instrument_context = build_instrument_context(
@@ -57,6 +63,16 @@ def create_news_analyst(llm):
 
         if len(result.tool_calls) == 0:
             report = result.content
+            logger.info(
+                "News Analyst completed: ticker=%s, report length=%d chars",
+                ticker, len(report),
+            )
+        else:
+            logger.info(
+                "News Analyst requesting %d tool calls: %s",
+                len(result.tool_calls),
+                [tc.get("name", tc.get("function", {}).get("name", "?")) for tc in result.tool_calls],
+            )
 
         return {
             "messages": [result],

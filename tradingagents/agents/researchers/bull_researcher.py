@@ -1,9 +1,16 @@
+import logging
+
 from tradingagents.agents.utils.agent_utils import get_language_instruction
+
+logger = logging.getLogger(__name__)
 
 
 def create_bull_researcher(llm):
     def bull_node(state) -> dict:
+        ticker = state["company_of_interest"]
         investment_debate_state = state["investment_debate_state"]
+        count = investment_debate_state.get("count", 0)
+        logger.info("Bull Researcher invoked: ticker=%s debate_round=%d", ticker, count)
         history = investment_debate_state.get("history", "")
         bull_history = investment_debate_state.get("bull_history", "")
 
@@ -42,6 +49,10 @@ def create_bull_researcher(llm):
         response = llm.invoke(prompt)
 
         argument = f"看涨分析师: {response.content}"
+        logger.info(
+            "Bull Researcher completed: ticker=%s argument length=%d chars",
+            ticker, len(argument),
+        )
 
         new_investment_debate_state = {
             "history": history + "\n" + argument,

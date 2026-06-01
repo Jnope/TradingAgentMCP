@@ -1,9 +1,16 @@
+import logging
+
 from tradingagents.agents.utils.agent_utils import get_language_instruction
+
+logger = logging.getLogger(__name__)
 
 
 def create_bear_researcher(llm):
     def bear_node(state) -> dict:
+        ticker = state["company_of_interest"]
         investment_debate_state = state["investment_debate_state"]
+        count = investment_debate_state.get("count", 0)
+        logger.info("Bear Researcher invoked: ticker=%s debate_round=%d", ticker, count)
         history = investment_debate_state.get("history", "")
         bear_history = investment_debate_state.get("bear_history", "")
 
@@ -44,6 +51,10 @@ def create_bear_researcher(llm):
         response = llm.invoke(prompt)
 
         argument = f"看跌分析师: {response.content}"
+        logger.info(
+            "Bear Researcher completed: ticker=%s argument length=%d chars",
+            ticker, len(argument),
+        )
 
         new_investment_debate_state = {
             "history": history + "\n" + argument,

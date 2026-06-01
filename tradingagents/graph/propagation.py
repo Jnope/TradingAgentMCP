@@ -1,11 +1,14 @@
 # TradingAgents/graph/propagation.py
 
+import logging
 from typing import Dict, Any, List, Optional
 from tradingagents.agents.utils.agent_states import (
     AgentState,
     InvestDebateState,
     RiskDebateState,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class Propagator:
@@ -21,11 +24,17 @@ class Propagator:
         trade_date: str,
         asset_type: str = "stock",
         past_context: str = "",
+        stock_name: str = "",
     ) -> Dict[str, Any]:
         """Create the initial state for the agent graph."""
+        logger.info(
+            "Creating initial state: ticker=%s trade_date=%s asset_type=%s past_context_len=%d stock_name=%s",
+            company_name, trade_date, asset_type, len(past_context) if past_context else 0, stock_name,
+        )
         return {
             "messages": [("human", company_name)],
             "company_of_interest": company_name,
+            "company_name": stock_name,
             "asset_type": asset_type,
             "trade_date": str(trade_date),
             "past_context": past_context,

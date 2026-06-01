@@ -1,9 +1,16 @@
+import logging
+
 from tradingagents.agents.utils.agent_utils import get_language_instruction
+
+logger = logging.getLogger(__name__)
 
 
 def create_aggressive_debator(llm):
     def aggressive_node(state) -> dict:
+        ticker = state["company_of_interest"]
         risk_debate_state = state["risk_debate_state"]
+        count = risk_debate_state.get("count", 0)
+        logger.info("Aggressive Debator invoked: ticker=%s risk_round=%d", ticker, count)
         history = risk_debate_state.get("history", "")
         aggressive_history = risk_debate_state.get("aggressive_history", "")
 
@@ -34,6 +41,10 @@ def create_aggressive_debator(llm):
         response = llm.invoke(prompt)
 
         argument = f"激进分析师: {response.content}"
+        logger.info(
+            "Aggressive Debator completed: ticker=%s argument length=%d chars",
+            ticker, len(argument),
+        )
 
         new_risk_debate_state = {
             "history": history + "\n" + argument,

@@ -2,6 +2,7 @@
 
 import logging
 import os
+import time
 from pathlib import Path
 import json
 from datetime import datetime, timedelta
@@ -234,16 +235,30 @@ class TradingAgentsGraph:
         """Resolve pending log entries for ticker at the start of a new run."""
         pending = [e for e in self.memory_log.get_pending_entries() if e["ticker"] == ticker]
         if not pending:
+            logger.info("No pending entries to resolve for %s", ticker)
             return
 
+        logger.info("Resolving %d pending entries for %s", len(pending), ticker)
         benchmark = self.config.get("benchmark_ticker", "000300")
         updates = []
         for entry in pending:
+            logger.info(
+                "Resolving pending entry: ticker=%s date=%s",
+                ticker, entry["date"],
+            )
             raw, alpha, days = self._fetch_returns(
                 ticker, entry["date"], benchmark=benchmark,
             )
             if raw is None:
+                logger.warning(
+                    "Could not fetch returns for pending entry: ticker=%s date=%s",
+                    ticker, entry["date"],
+                )
                 continue
+            logger.info(
+                "Fetched returns for %s on %s: raw=%.2f%% alpha=%.2f%% holding=%d days",
+                ticker, entry["date"], raw * 100, alpha * 100, days,
+            )
             reflection = self.reflector.reflect_on_final_decision(
                 final_decision=entry.get("decision", ""),
                 raw_return=raw,
@@ -261,10 +276,16 @@ class TradingAgentsGraph:
 
         if updates:
             self.memory_log.batch_update_with_outcomes(updates)
+            logger.info("Batch updated %d entries with outcomes", len(updates))
 
-    def propagate(self, company_name, trade_date, asset_type: str = "stock"):
+    def propagate(self, company_name, trade_date, asset_type: str = "stock", stock_name: str = ""):
         """Run the trading agents graph for a company on a specific date."""
         self.ticker = company_name
+        logger.info(
+            "=== Propagate started: ticker=%s trade_date=%s asset_type=%s stock_name=%s ===",
+            company_name, trade_date, asset_type, stock_name,
+        )
+        t_start = time.time()
 
         self._resolve_pending_entries(company_name)
 
@@ -286,24 +307,34 @@ class TradingAgentsGraph:
                 logger.info("Starting fresh for %s on %s", company_name, trade_date)
 
         try:
-            return self._run_graph(company_name, trade_date, asset_type=asset_type)
+            return self._run_graph(company_name, trade_date, asset_type=asset_type, stock_name=stock_name)
         finally:
+            elapsed = time.time() - t_start
+            logger.info(
+                "=== Propagate finished: ticker=%s trade_date=%s elapsed=%.1fs ===",
+                company_name, trade_date, elapsed,
+            )
             if self._checkpointer_ctx is not None:
                 self._checkpointer_ctx.__exit__(None, None, None)
                 self._checkpointer_ctx = None
                 self.graph = self.workflow.compile()
 
-    def _run_graph(self, company_name, trade_date, asset_type: str = "stock"):
+    def _run_graph(self, company_name, trade_date, asset_type: str = "stock", stock_name: str = ""):
         """Execute the graph and write the resulting state to disk and memory log."""
+        logger.info("Creating initial state for %s on %s", company_name, trade_date)
         past_context = self.memory_log.get_past_context(company_name)
         init_agent_state = self.propagator.create_initial_state(
-            company_name, trade_date, asset_type=asset_type, past_context=past_context
+            company_name, trade_date, asset_type=asset_type, past_context=past_context,
+            stock_name=stock_name,
         )
         args = self.propagator.get_graph_args()
 
         if self.config.get("checkpoint_enabled"):
             tid = thread_id(company_name, str(trade_date))
             args.setdefault("config", {}).setdefault("configurable", {})["thread_id"] = tid
+
+        logger.info("Invoking graph for %s on %s (debug=%s)", company_name, trade_date, self.debug)
+        t_graph_start = time.time()
 
         if self.debug:
             trace = []
@@ -319,6 +350,12 @@ class TradingAgentsGraph:
         else:
             final_state = self.graph.invoke(init_agent_state, **args)
 
+        graph_elapsed = time.time() - t_graph_start
+        logger.info(
+            "Graph execution completed for %s on %s in %.1fs",
+            company_name, trade_date, graph_elapsed,
+        )
+
         self.curr_state = final_state
 
         self._log_state(trade_date, final_state)
@@ -328,16 +365,23 @@ class TradingAgentsGraph:
             trade_date=trade_date,
             final_trade_decision=final_state["final_trade_decision"],
         )
+        logger.info(
+            "Stored decision for %s on %s: %s",
+            company_name, trade_date,
+            final_state["final_trade_decision"][:100] if final_state.get("final_trade_decision") else "N/A",
+        )
 
         if self.config.get("checkpoint_enabled"):
             clear_checkpoint(
                 self.config["data_cache_dir"], company_name, str(trade_date)
             )
+            logger.info("Cleared checkpoint for %s on %s", company_name, trade_date)
 
         return final_state
 
     def _log_state(self, trade_date, final_state):
         """Log the final state to a JSON file."""
+        logger.info("Writing state log for %s on %s", self.ticker, trade_date)
         self.log_states_dict[str(trade_date)] = {
             "company_of_interest": final_state["company_of_interest"],
             "trade_date": final_state["trade_date"],

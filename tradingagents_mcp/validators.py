@@ -50,6 +50,18 @@ def resolve_stock_name(name: str) -> Optional[str]:
     return _CN_STOCK_NAME_MAP.get(name) or _CN_INDEX_MAP.get(name)
 
 
+def resolve_company_name(symbol: str) -> str:
+    """根据6位股票代码查询公司名称，查询失败返回空字符串。"""
+    try:
+        from tradingagents.dataflows.providers.china.internal_queries import get_stock_info
+        info = get_stock_info(symbol)
+        if info and info.get("name"):
+            return info["name"]
+    except Exception:
+        pass
+    return symbol
+
+
 def validate_symbol(symbol: str) -> Tuple[str, str]:
     if not symbol or not symbol.strip():
         raise ValueError("股票代码不能为空")
@@ -258,6 +270,7 @@ def build_response(
     error: str = "",
     symbol: str = "",
     market: str = "",
+    company_name: str = "",
     trade_date: str = "",
     analysts_used: list = None,
     elapsed_seconds: float = 0.0,
@@ -272,6 +285,8 @@ def build_response(
         ctx["symbol"] = symbol
     if market:
         ctx["market"] = market
+    if company_name:
+        ctx["company_name"] = company_name
     if trade_date:
         ctx["trade_date"] = trade_date
     if analysts_used is not None:
@@ -287,6 +302,9 @@ def build_response(
 
 def extract_full_result(state: dict) -> dict:
     result = {}
+    company_name = state.get("company_name", "")
+    if company_name:
+        result["company_name"] = company_name
     for key in ["market_report", "fundamentals_report", "sentiment_report", "news_report"]:
         result[key] = state.get(key, "")
 

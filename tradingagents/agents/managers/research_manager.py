@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from tradingagents.agents.schemas import ResearchPlan, render_research_plan
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
@@ -12,11 +14,15 @@ from tradingagents.agents.utils.structured import (
     invoke_structured_or_freetext,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def create_research_manager(llm):
     structured_llm = bind_structured(llm, ResearchPlan, "Research Manager")
 
     def research_manager_node(state) -> dict:
+        ticker = state["company_of_interest"]
+        logger.info("Research Manager invoked: ticker=%s", ticker)
         instrument_context = build_instrument_context(state["company_of_interest"])
         history = state["investment_debate_state"].get("history", "")
 
@@ -48,6 +54,11 @@ def create_research_manager(llm):
             prompt,
             render_research_plan,
             "Research Manager",
+        )
+
+        logger.info(
+            "Research Manager completed: ticker=%s plan length=%d chars",
+            ticker, len(investment_plan),
         )
 
         new_investment_debate_state = {
