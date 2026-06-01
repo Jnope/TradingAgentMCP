@@ -24,7 +24,7 @@ from tradingagents_mcp.validators import (
     nearest_trade_date,
     build_config,
     check_health,
-    extract_reports,
+    extract_full_result,
 )
 from tradingagents_mcp.shared_context import get_shared_ctx
 
@@ -173,9 +173,11 @@ async def trading_agent(
             progress_callback = _on_progress
 
         loop = asyncio.get_event_loop()
-        state, decision = await loop.run_in_executor(
+        state = await loop.run_in_executor(
             None, lambda: ta.propagate(symbol, trade_date)
         )
+
+        from tradingagents.agents.utils.rating import parse_rating
 
         elapsed = round(time.time() - t0, 1)
         result = {
@@ -184,10 +186,9 @@ async def trading_agent(
             "market": market,
             "trade_date": trade_date,
             "tool": "trading_agent",
-            "decision": decision,
             "analysts_used": analysts,
             "elapsed_seconds": elapsed,
-            **extract_reports(state),
+            **extract_full_result(state),
         }
 
         return result

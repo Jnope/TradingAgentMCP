@@ -156,13 +156,17 @@ Step 4: 调用工具
 **返回值**:
 | 字段 | 说明 |
 |------|------|
-| `decision` | 最终交易决策 |
 | `market` | "A股" |
 | `analysts_used` | 使用的分析师列表 |
 | `market_report` | 市场技术分析报告 |
 | `fundamentals_report` | 基本面分析报告 |
 | `sentiment_report` | 社交情绪报告 |
 | `news_report` | 新闻分析报告 |
+| `investment_debate` | 多空辩论结果（bull_history/bear_history/history/current_response/judge_decision） |
+| `trader_investment_plan` | 交易员投资方案（操作/理由/入场价/止损/仓位） |
+| `risk_debate` | 风险讨论结果（aggressive_history/conservative_history/neutral_history/history/judge_decision） |
+| `investment_plan` | 研究经理投资计划（建议/理由/战略行动） |
+| `final_trade_decision` | 投资组合经理最终决策（含评级：买入/增持/持有/减持/卖出 + 执行摘要 + 投资逻辑 + 目标价 + 时间周期） |
 
 **调用前必须告知**: "全流程分析需要 3-10 分钟，请耐心等待"
 

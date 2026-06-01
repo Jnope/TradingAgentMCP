@@ -1,4 +1,7 @@
 # 项目重构说明
+../TradingAgents 为美股AI金融分析师agent 源码；
+../TradingAgents-MCP 为基于 ../TradingAgents-CN修改的fastmcp 服务；
+当前项目为基于../TradingAgents修改的fastmcp服务；
 参考../TradingAgents-MCP项目，将当前项目修改为fastmcp服务，对外暴露单分析师和trading_agent和health_check方法
 
 ## 要求

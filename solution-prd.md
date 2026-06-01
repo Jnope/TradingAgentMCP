@@ -4,6 +4,7 @@
 
 ### 1.1 背景
 
+../TradingAgents为原始 TradingAgents 框架；
 当前项目 `TradingAgentsMCP` 是基于原始 TradingAgents 框架的 MCP 封装，数据源以 yfinance、alpha_vantage、finnhub 等海外数据源为主，仅适用于美股分析。需参考 `TradingAgents-MCP` 项目的架构，将当前项目重构为面向 A 股的 FastMCP 服务。
 
 ### 1.2 目标
