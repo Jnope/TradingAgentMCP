@@ -124,7 +124,6 @@ def build_config() -> dict:
         "MCP_DEEP_THINK_LLM": ("deep_think_llm", str),
         "MCP_QUICK_THINK_LLM": ("quick_think_llm", str),
         "MCP_BACKEND_URL": ("backend_url", str),
-        "MCP_ONLINE_TOOLS": ("online_tools", lambda v: v.lower() == "true"),
         "MCP_ONLINE_NEWS": ("online_news", lambda v: v.lower() == "true"),
         "MCP_MAX_DEBATE_ROUNDS": ("max_debate_rounds", int),
         "MCP_MAX_RISK_DISCUSS_ROUNDS": ("max_risk_discuss_rounds", int),
