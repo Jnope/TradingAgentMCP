@@ -255,10 +255,8 @@ def extract_full_result(state: dict) -> dict:
 
     debate = state.get("investment_debate_state") or {}
     result["investment_debate"] = {
-        "bull_history": debate.get("bull_history", []),
-        "bear_history": debate.get("bear_history", []),
-        "history": debate.get("history", ""),
-        "current_response": debate.get("current_response", ""),
+        "bull_history": debate.get("bull_history", ""),
+        "bear_history": debate.get("bear_history", ""),
         "judge_decision": debate.get("judge_decision", ""),
     }
 
@@ -266,10 +264,9 @@ def extract_full_result(state: dict) -> dict:
 
     risk = state.get("risk_debate_state") or {}
     result["risk_debate"] = {
-        "aggressive_history": risk.get("aggressive_history", []),
-        "conservative_history": risk.get("conservative_history", []),
-        "neutral_history": risk.get("neutral_history", []),
-        "history": risk.get("history", ""),
+        "aggressive_history": risk.get("aggressive_history", ""),
+        "conservative_history": risk.get("conservative_history", ""),
+        "neutral_history": risk.get("neutral_history", ""),
         "judge_decision": risk.get("judge_decision", ""),
     }
 

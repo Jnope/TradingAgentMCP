@@ -10,8 +10,8 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
     get_language_instruction,
-    get_news,
 )
+from tradingagents.dataflows.interface import get_news as get_news_data
 from tradingagents.dataflows.providers.china.akshare_news import (
     get_stock_sentiment,
     get_stock_news,
@@ -34,7 +34,8 @@ def create_sentiment_analyst(llm):
         start_date = _seven_days_back(end_date)
         instrument_context = build_instrument_context(ticker)
 
-        news_block = get_news.func(ticker, start_date, end_date)
+        look_back_days = max((datetime.strptime(end_date, "%Y-%m-%d") - datetime.strptime(start_date, "%Y-%m-%d")).days, 7)
+        news_block = get_news_data(ticker, end_date, look_back_days)
         sentiment_block = get_stock_sentiment(ticker)
 
         system_message = _build_system_message(
