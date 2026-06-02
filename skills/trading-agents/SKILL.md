@@ -17,7 +17,7 @@ metadata:
 
 # TradingAgents — A股AI金融交易分析
 
-仅支持A股，股票代码为6位数字（如 `000001`、`600519`），用于调用tradingagents MCP，返回JSON格式代码块
+仅支持A股，股票代码为6位数字（如 `000001`、`600519`），用于调用tradingagents MCP，返回JSON字符串
 
 ## 意图 → 工具映射
 
@@ -34,7 +34,7 @@ metadata:
 
 ## 调用前确认
 
-调用任何分析工具前，必须依次确认以下三项（每项单独确认，不得跳过或合并）：
+调用任何分析工具前，必须依次确认以下三项（**若用户已在上下文中明确提供某项信息，则跳过该项确认，仅确认缺失项**）：
 
 1. **股票代码**：6位数字。中文股票名需确认对应代码（如"茅台"→确认"600519"）
 2. **分析日期**：YYYY-MM-DD 格式。未指定则询问，"今天"/"昨天"自动转换
@@ -56,12 +56,12 @@ metadata:
 4. **禁止补调**：不得在收到结果后再调用其他工具"补充获取"数据（如调完 `market_analyst` 又调 `trading_agent`）
 5. **不自动重试**: 无论是否失败，不自动重试
 
-## 数据输出强制约束（最高优先级）
+## 数据输出强制约束（最高优先级 - 纯文本 JSON）
 
-1. **原样透传**：收到 MCP 工具返回的 JSON 后，必须将其作为JSON代码块完整输出，严禁提取字段、生成摘要、改写结构或调用 `.toString()`
-2. **禁止嵌套转义**：不得对返回的 JSON 字符串进行二次序列化（避免出现 `"{\"success\":true}"` 这种双重引号格式）
-3. **禁止混合输出**：不要在 JSON 代码块前后添加任何解释性文字、问候语或分析总结。你的唯一任务是将原始 JSON 放入 ```json 代码块中返回
-4. **CLI/前端契约**：结果依赖完整的 JSON 结构进行渲染，任何字段缺失、类型变更或结构拍平都会导致系统崩溃
+1. **绝对禁止 Markdown 代码块**：严禁使用任何 Markdown 格式化符号。**绝不允许**在输出中包含 ```json、``` 或 ` 等符号。
+2. **原样透传**：直接返回 MCP 的原始结果（Raw Output），严禁提取字段、生成摘要、改写结构、调用 `.toString()` 或进行二次序列化（避免出现 `"{\"success\":true}"` 这种双重引号格式）。
+3. **零加工原则**：严禁在 JSON 前后添加任何开场白、解释、总结或换行符。
+4. **解析友好**：你的输出必须能被前端直接通过 `JSON.parse()` 解析。任何多余字符（包括代码块标记）都会导致系统崩溃。
 
 ## 返回数据结构声明（仅供校验，禁止拆解）
 
@@ -75,6 +75,6 @@ metadata:
 - `ctx.elapsed_seconds` (float) — 耗时
 - `data` (object) — 工具返回的具体数据
 
-`trading_agent` 的 `data` 包含：`company_name`、`market_report`、`fundamentals_report`、`sentiment_report`、`news_report`、`investment_debate`、`trader_investment_plan`、`risk_debate`、`investment_plan`、`final_trade_decision`
+`data` 包含：`company_name`、`market_report`、`fundamentals_report`、`sentiment_report`、`news_report`、`investment_debate`、`trader_investment_plan`、`risk_debate`、`investment_plan`、`final_trade_decision`
 
 ⚠️ 注意：以上字段说明仅用于验证 JSON 完整性，绝不允许基于此说明对数据进行筛选、重组或自然语言转述。
