@@ -175,6 +175,8 @@ def test_timelyre():
             password=password,
             token=token,
             disable_cancel=True,
+            session_timeout=60000,
+            login_timeout=15000,
         )
         print("TransMatrix DatabaseConn 初始化成功")
         import pandas as pd
@@ -189,3 +191,4 @@ def test_timelyre():
 
 if __name__ == "__main__":
     _load_env_from_opencode_json()
+    test_timelyre()

@@ -12,6 +12,14 @@ import sys
 import logging
 from pathlib import Path
 
+def _set_env():
+    os.environ.pop('HTTP_PROXY', None)
+    os.environ.pop('HTTPS_PROXY', None)
+    os.environ.pop('http_proxy', None)
+    os.environ.pop('https_proxy', None)
+    os.environ.setdefault('NO_PROXY', "*")
+    os.environ.setdefault('no_proxy', "*")
+
 
 def _setup_logging():
     from logging.handlers import TimedRotatingFileHandler
@@ -123,6 +131,9 @@ def _run_server():
 
 
 def main():
+    close_env = os.getenv("MCP_CLOSE_PROXY", "false")
+    if close_env == "true":
+         _set_env()
     if len(sys.argv) > 1 and sys.argv[1] == "check":
         sys.exit(_run_check())
     _run_server()

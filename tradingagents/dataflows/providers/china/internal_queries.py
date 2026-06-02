@@ -58,6 +58,8 @@ def _get_db_conn():
         db_user = os.environ.get("TM_DB_USER", "admin")
         password = os.environ.get("TM_DB_PASSWORD", "admin")
         token = os.environ.get("GUARDIAN_TOKEN", "UgJRRGe7qMAKcirOQ017-TDH")
+        session_timeout = int(os.environ.get("TM_SESSION_TIMEOUT", "60000"))
+        login_timeout = int(os.environ.get("TM_LOGIN_TIMEOUT", "15000"))
 
         try:
             _db_conn = DatabaseConn(
@@ -69,6 +71,8 @@ def _get_db_conn():
                 password=password,
                 token=token,
                 disable_cancel=True,
+                session_timeout=session_timeout,
+                login_timeout=login_timeout,
             )
             logger.info("TransMatrix DatabaseConn 初始化成功")
             return _db_conn
@@ -82,7 +86,7 @@ def _extract_table_name(sql: str) -> str:
     return m.group(1) if m else ""
 
 
-_QUERY_TIMEOUT = 60
+_QUERY_TIMEOUT = int(os.environ.get("TM_QUERY_TIMEOUT", "30"))
 
 
 def query(sql: str, table: str = "") -> pd.DataFrame:

@@ -277,7 +277,7 @@ def build_response(
     data: dict = None,
 ) -> dict:
     ctx: Dict[str, Any] = {
-        "serverName": _SERVER_NAME,
+        "server_name": _SERVER_NAME,
         "tool": tool,
         "elapsed_seconds": elapsed_seconds,
     }

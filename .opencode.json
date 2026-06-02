@@ -5,11 +5,6 @@
       "command": ["tradingagents-mcp"],
       "timeout": 3600000,
       "environment": {
-        "NO_PROXY": "*",
-        "http_proxy": "",
-        "https_proxy": "",
-        "HTTP_PROXY": "",
-        "HTTPS_PROXY": "",
         "MCP_LLM_PROVIDER": "openai",
         "MCP_DEEP_THINK_LLM": "xclaw/glm-5.1",
         "MCP_QUICK_THINK_LLM": "xclaw/glm-5.1",
