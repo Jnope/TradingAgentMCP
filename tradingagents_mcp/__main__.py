@@ -24,8 +24,8 @@ def _setup_logging():
     )
     Path(log_dir).mkdir(parents=True, exist_ok=True)
 
-    fmt_console = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
-    fmt_file = "%(asctime)s | %(name)-20s | %(levelname)-8s | %(module)s:%(funcName)s:%(lineno)d | %(message)s"
+    fmt_console = "%(asctime)s %(levelname)s [%(name)s]: %(message)s"
+    fmt_file = "%(asctime)s | %(levelname)s | %(name)s | %(module)s:%(funcName)s:%(lineno)d | %(message)s"
 
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
@@ -68,6 +68,7 @@ def _setup_logging():
         ("httpx", logging.WARNING),
         ("httpcore", logging.WARNING),
         ("matplotlib", logging.WARNING),
+        ("database", logging.WARNING),
     ]:
         logging.getLogger(name).setLevel(lvl)
 
