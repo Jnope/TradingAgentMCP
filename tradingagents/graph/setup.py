@@ -8,7 +8,7 @@ from tradingagents.agents import *
 from tradingagents.agents.utils.agent_states import AgentState
 
 from .analyst_execution import build_analyst_execution_plan
-from .conditional_logic import ConditionalLogic
+from .conditional_logic import ConditionalLogic, make_should_continue
 
 
 class GraphSetup:
@@ -97,7 +97,7 @@ class GraphSetup:
             # Add conditional edges for current analyst
             workflow.add_conditional_edges(
                 current_analyst,
-                getattr(self.conditional_logic, f"should_continue_{spec.key}"),
+                make_should_continue(spec),
                 [current_tools, current_clear],
             )
             workflow.add_edge(current_tools, current_analyst)

@@ -4,7 +4,7 @@ from typing import Any, Optional
 from langchain_anthropic import ChatAnthropic
 
 from .base_client import BaseLLMClient, normalize_content
-from .validators import validate_model
+from .validators import validate_model as _validate_model
 
 _PASSTHROUGH_KWARGS = (
     "timeout", "max_retries", "api_key", "max_tokens",
@@ -65,4 +65,4 @@ class AnthropicClient(BaseLLMClient):
 
     def validate_model(self) -> bool:
         """Validate model for Anthropic."""
-        return validate_model("anthropic", self.model)
+        return _validate_model("anthropic", self.model)

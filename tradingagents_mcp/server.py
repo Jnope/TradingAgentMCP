@@ -45,6 +45,18 @@ _ANALYST_LABELS = {
     "social": "社交情绪",
 }
 
+_REPORT_KEYS = {
+    "market": "market_report",
+    "fundamentals": "fundamentals_report",
+    "news": "news_report",
+    "social": "sentiment_report",
+}
+
+
+def _get_single_analyst_graph(analyst_type: str, llm):
+    from tradingagents.graph.mini_graph import compile_single_analyst_graph
+    return compile_single_analyst_graph(analyst_type, llm)
+
 
 async def _run_single_analyst(
     analyst_type: str,
@@ -55,6 +67,7 @@ async def _run_single_analyst(
 ) -> dict:
     ctx_ = get_shared_ctx()
     label = _ANALYST_LABELS.get(analyst_type, analyst_type)
+    report_key = _REPORT_KEYS[analyst_type]
     logger.info("Single analyst started: type=%s symbol=%s date=%s", label, symbol, trade_date)
 
     if ctx:
@@ -66,42 +79,20 @@ async def _run_single_analyst(
         "messages": [HumanMessage(content=f"请分析股票 {symbol}")],
         "company_of_interest": symbol,
         "trade_date": trade_date,
-        f"{analyst_type}_tool_call_count": 0,
     }
     if extra_state:
         state.update(extra_state)
 
-    analyst_map = {
-        "market": ("create_market_analyst", "market_report"),
-        "fundamentals": ("create_fundamentals_analyst", "fundamentals_report"),
-        "news": ("create_news_analyst", "news_report"),
-        "social": ("create_sentiment_analyst", "sentiment_report"),
-    }
-
-    _, report_key = analyst_map[analyst_type]
-
-    from tradingagents.agents import (
-        create_market_analyst,
-        create_fundamentals_analyst,
-        create_news_analyst,
-        create_sentiment_analyst,
-    )
-
-    create_fn = {
-        "market": create_market_analyst,
-        "fundamentals": create_fundamentals_analyst,
-        "news": create_news_analyst,
-        "social": create_sentiment_analyst,
-    }[analyst_type]
-
-    node = create_fn(ctx_.quick_thinking_llm)
+    graph = _get_single_analyst_graph(analyst_type, ctx_.quick_thinking_llm)
 
     if ctx:
         await ctx.info(f"[2/3] 正在获取 {symbol} 数据并执行{label}分析...")
 
     t1 = time.time()
     loop = asyncio.get_running_loop()
-    result_state = await loop.run_in_executor(None, lambda: node(state))
+    result_state = await loop.run_in_executor(
+        None, lambda: graph.invoke(state),
+    )
     elapsed = round(time.time() - t1, 1)
 
     if ctx:

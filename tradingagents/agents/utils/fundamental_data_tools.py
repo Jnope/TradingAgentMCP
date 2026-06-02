@@ -1,11 +1,11 @@
 from langchain_core.tools import tool
 from typing import Annotated
 from tradingagents.dataflows.interface import (
-    get_fundamentals,
-    get_balance_sheet,
-    get_cashflow,
-    get_income_statement,
-    get_money_flow,
+    get_fundamentals as _get_fundamentals,
+    get_balance_sheet as _get_balance_sheet,
+    get_cashflow as _get_cashflow,
+    get_income_statement as _get_income_statement,
+    get_money_flow as _get_money_flow,
 )
 
 
@@ -22,7 +22,7 @@ def get_fundamentals(
     Returns:
         str: 包含基本面数据的格式化文本
     """
-    return get_fundamentals(ticker, curr_date)
+    return _get_fundamentals(ticker, curr_date)
 
 
 @tool
@@ -40,7 +40,7 @@ def get_balance_sheet(
     Returns:
         str: 包含资产负债表数据的格式化文本
     """
-    return get_balance_sheet(ticker, freq, curr_date)
+    return _get_balance_sheet(ticker, freq, curr_date)
 
 
 @tool
@@ -58,7 +58,7 @@ def get_cashflow(
     Returns:
         str: 包含现金流量表数据的格式化文本
     """
-    return get_cashflow(ticker, freq, curr_date)
+    return _get_cashflow(ticker, freq, curr_date)
 
 
 @tool
@@ -76,7 +76,7 @@ def get_income_statement(
     Returns:
         str: 包含利润表数据的格式化文本
     """
-    return get_income_statement(ticker, freq, curr_date)
+    return _get_income_statement(ticker, freq, curr_date)
 
 
 @tool
@@ -94,4 +94,4 @@ def get_money_flow_tool(
     Returns:
         str: 包含资金流向数据的格式化文本
     """
-    return get_money_flow(ticker, start_date, end_date)
+    return _get_money_flow(ticker, start_date, end_date)

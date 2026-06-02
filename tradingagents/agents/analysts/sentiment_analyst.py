@@ -75,7 +75,7 @@ def create_sentiment_analyst(llm):
         prompt = prompt.partial(instrument_context=instrument_context)
 
         chain = prompt | llm
-        result = chain.invoke(state["messages"])
+        result = chain.invoke({"messages": state["messages"]})
 
         logger.info(
             "Sentiment Analyst completed: ticker=%s, report length=%d chars",

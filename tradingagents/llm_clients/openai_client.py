@@ -7,7 +7,7 @@ from langchain_openai import ChatOpenAI
 from .api_key_env import get_api_key_env
 from .base_client import BaseLLMClient, normalize_content
 from .capabilities import get_capabilities
-from .validators import validate_model
+from .validators import validate_model as _validate_model
 
 
 class NormalizedChatOpenAI(ChatOpenAI):
@@ -248,4 +248,4 @@ class OpenAIClient(BaseLLMClient):
 
     def validate_model(self) -> bool:
         """Validate model for the provider."""
-        return validate_model(self.provider, self.model)
+        return _validate_model(self.provider, self.model)

@@ -1,6 +1,6 @@
 from langchain_core.tools import tool
 from typing import Annotated
-from tradingagents.dataflows.interface import get_stock_data
+from tradingagents.dataflows.interface import get_stock_data as _get_stock_data
 
 
 @tool
@@ -18,4 +18,4 @@ def get_stock_data(
     Returns:
         str: 包含股票行情数据的格式化文本
     """
-    return get_stock_data(symbol, start_date, end_date)
+    return _get_stock_data(symbol, start_date, end_date)

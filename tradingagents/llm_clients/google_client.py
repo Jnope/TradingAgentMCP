@@ -3,7 +3,7 @@ from typing import Any, Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from .base_client import BaseLLMClient, normalize_content
-from .validators import validate_model
+from .validators import validate_model as _validate_model
 
 
 class NormalizedChatGoogleGenerativeAI(ChatGoogleGenerativeAI):
@@ -60,4 +60,4 @@ class GoogleClient(BaseLLMClient):
 
     def validate_model(self) -> bool:
         """Validate model for Google."""
-        return validate_model("google", self.model)
+        return _validate_model("google", self.model)

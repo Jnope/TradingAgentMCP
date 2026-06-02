@@ -3,7 +3,7 @@
     "tradingagents": {
       "type": "local",
       "command": ["tradingagents-mcp"],
-      "timeout": 0,
+      "timeout": 3600000,
       "environment": {
         "NO_PROXY": "*",
         "http_proxy": "",

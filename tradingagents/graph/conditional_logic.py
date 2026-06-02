@@ -3,8 +3,25 @@
 import logging
 
 from tradingagents.agents.utils.agent_states import AgentState
+from tradingagents.graph.analyst_execution import ANALYST_NODE_SPECS, AnalystNodeSpec
 
 logger = logging.getLogger(__name__)
+
+
+def make_should_continue(spec: AnalystNodeSpec):
+    """Factory: 为一个分析师生成条件边函数（完整图用，路由到 clear_node）。"""
+    def should_continue(state: AgentState) -> str:
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            logger.info(
+                "%s → %s (%d tool calls)",
+                spec.agent_node, spec.tool_node, len(last_message.tool_calls),
+            )
+            return spec.tool_node
+        logger.info("%s → %s (analysis complete)", spec.agent_node, spec.clear_node)
+        return spec.clear_node
+    return should_continue
 
 
 class ConditionalLogic:
@@ -15,45 +32,8 @@ class ConditionalLogic:
         self.max_debate_rounds = max_debate_rounds
         self.max_risk_discuss_rounds = max_risk_discuss_rounds
 
-    def should_continue_market(self, state: AgentState):
-        """Determine if market analysis should continue."""
-        messages = state["messages"]
-        last_message = messages[-1]
-        if last_message.tool_calls:
-            logger.info("Market Analyst → tools_market (%d tool calls)", len(last_message.tool_calls))
-            return "tools_market"
-        logger.info("Market Analyst → Msg Clear Market (analysis complete)")
-        return "Msg Clear Market"
-
-    def should_continue_social(self, state: AgentState):
-        """Determine if sentiment-analyst tool round should continue."""
-        messages = state["messages"]
-        last_message = messages[-1]
-        if last_message.tool_calls:
-            logger.info("Sentiment Analyst → tools_social (%d tool calls)", len(last_message.tool_calls))
-            return "tools_social"
-        logger.info("Sentiment Analyst → Msg Clear Sentiment (analysis complete)")
-        return "Msg Clear Sentiment"
-
-    def should_continue_news(self, state: AgentState):
-        """Determine if news analysis should continue."""
-        messages = state["messages"]
-        last_message = messages[-1]
-        if last_message.tool_calls:
-            logger.info("News Analyst → tools_news (%d tool calls)", len(last_message.tool_calls))
-            return "tools_news"
-        logger.info("News Analyst → Msg Clear News (analysis complete)")
-        return "Msg Clear News"
-
-    def should_continue_fundamentals(self, state: AgentState):
-        """Determine if fundamentals analysis should continue."""
-        messages = state["messages"]
-        last_message = messages[-1]
-        if last_message.tool_calls:
-            logger.info("Fundamentals Analyst → tools_fundamentals (%d tool calls)", len(last_message.tool_calls))
-            return "tools_fundamentals"
-        logger.info("Fundamentals Analyst → Msg Clear Fundamentals (analysis complete)")
-        return "Msg Clear Fundamentals"
+        for key, spec in ANALYST_NODE_SPECS.items():
+            setattr(self, f"should_continue_{key}", make_should_continue(spec))
 
     def should_continue_debate(self, state: AgentState) -> str:
         """Determine if debate should continue."""
