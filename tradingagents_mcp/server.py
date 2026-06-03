@@ -26,6 +26,7 @@ from tradingagents_mcp.validators import (
     check_health,
     build_response,
     extract_full_result,
+    extract_detail_result,
     resolve_company_name,
 )
 from tradingagents_mcp.shared_context import get_shared_ctx
@@ -118,6 +119,7 @@ async def trading_agent(
     max_debate_rounds: int = 1,
     max_risk_discuss_rounds: int = 1,
     parallel_analysts: Optional[bool] = None,
+    detail: bool = False,
     ctx: Context[ServerSession, None] = None,
 ) -> dict:
     """AI金融交易分析Agent（完整流程）：执行多Agent协作分析，
@@ -132,6 +134,7 @@ async def trading_agent(
         max_debate_rounds: 多空辩论轮次
         max_risk_discuss_rounds: 风险辩论轮次
         parallel_analysts: 分析师是否并行执行，默认读取 MCP_PARALLEL_ANALYSTS 环境变量，未设置则并行
+        detail: 是否返回详细结果（含分析师报告和辩论历史），默认False仅返回摘要
 """
     t0 = time.time()
     if analysts is None:
@@ -195,7 +198,7 @@ async def trading_agent(
             trade_date=trade_date,
             analysts_used=analysts,
             elapsed_seconds=elapsed,
-            data=extract_full_result(state),
+            data=extract_detail_result(state) if detail else extract_full_result(state, llm=shared.quick_thinking_llm),
         )
 
     except Exception as e:

@@ -300,7 +300,65 @@ def build_response(
     }
 
 
-def extract_full_result(state: dict) -> dict:
+def _summarize_text(llm, text: str, role_hint: str, max_length: int = 1000) -> str:
+    if not text or len(text) <= max_length:
+        return text
+    prompt = (
+        f"请将以下{role_hint}浓缩为简短摘要（200字以内），保留核心结论和关键数据，不要添加额外解释：\n\n{text}"
+    )
+    try:
+        resp = llm.invoke(prompt)
+        return resp.content if hasattr(resp, "content") else str(resp)
+    except Exception:
+        return text[:max_length] + "..."
+
+
+def extract_full_result(state: dict, llm=None) -> dict:
+    result = {}
+    company_name = state.get("company_name", "")
+    if company_name:
+        result["company_name"] = company_name
+
+    summarize = lambda text, hint: _summarize_text(llm, text, hint) if llm else text
+
+    report_hints = {
+        "market_report": "市场技术分析报告",
+        "fundamentals_report": "基本面分析报告",
+        "sentiment_report": "社交媒体情绪报告",
+        "news_report": "新闻分析报告",
+    }
+    for key, hint in report_hints.items():
+        raw = state.get(key, "")
+        result[key] = summarize(raw, hint) if raw else ""
+
+    debate = state.get("investment_debate_state") or {}
+    result["investment_debate"] = {
+        "bull_history": summarize(debate.get("bull_history", ""), "看涨分析师辩论发言"),
+        "bear_history": summarize(debate.get("bear_history", ""), "看跌分析师辩论发言"),
+        "judge_decision": debate.get("judge_decision", ""),
+    }
+
+    result["trader_investment_plan"] = summarize(
+        state.get("trader_investment_plan", ""), "交易员投资计划"
+    )
+
+    risk = state.get("risk_debate_state") or {}
+    result["risk_debate"] = {
+        "aggressive_history": summarize(risk.get("aggressive_history", ""), "激进风险分析师辩论发言"),
+        "conservative_history": summarize(risk.get("conservative_history", ""), "保守风险分析师辩论发言"),
+        "neutral_history": summarize(risk.get("neutral_history", ""), "中性风险分析师辩论发言"),
+        "judge_decision": risk.get("judge_decision", ""),
+    }
+
+    result["investment_plan"] = summarize(
+        state.get("investment_plan", ""), "投资计划"
+    )
+    result["final_trade_decision"] = state.get("final_trade_decision", "")
+
+    return result
+
+
+def extract_detail_result(state: dict) -> dict:
     result = {}
     company_name = state.get("company_name", "")
     if company_name:

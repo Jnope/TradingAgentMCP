@@ -19,6 +19,8 @@ from pathlib import Path
 from langchain_core.messages import HumanMessage
 from transwarp.timelyre import DatabaseConn
 
+from tradingagents_mcp.validators import _summarize_text
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
@@ -57,7 +59,9 @@ def test_trading_agent():
         build_config,
         build_response,
         extract_full_result,
+        extract_detail_result,
     )
+    from tradingagents_mcp.shared_context import get_shared_ctx
 
     symbol = "688031"
     trade_date = "2026-05-20"
@@ -81,6 +85,7 @@ def test_trading_agent():
     state = ta.propagate(symbol, trade_date)
     elapsed = round(time.time() - t0, 1)
 
+    ctx_ = get_shared_ctx()
     result = build_response(
         tool="trading_agent",
         success=True,
@@ -89,7 +94,7 @@ def test_trading_agent():
         trade_date=trade_date,
         analysts_used=analysts,
         elapsed_seconds=elapsed,
-        data=extract_full_result(state),
+        data=extract_full_result(state, llm=ctx_.quick_thinking_llm),
     )
 
     print(f"\n{'='*60}")
@@ -144,7 +149,6 @@ def test_market_analyst(symbol="688031", trade_date="2026-05-20"):
     print(f"\n{'='*60}")
     print(f"✅ 技术面分析完成，耗时 {elapsed}s，报告 {len(report)} 字符")
     print(f"{'='*60}")
-
     if report:
         print(f"\n{report}")
     else:
@@ -152,6 +156,18 @@ def test_market_analyst(symbol="688031", trade_date="2026-05-20"):
         print(f"state keys: {list(result_state.keys())}")
         for msg in result_state.get("messages", []):
             print(f"  message: {type(msg).__name__}, content_len={len(msg.content) if hasattr(msg, 'content') else 'N/A'}, tool_calls={getattr(msg, 'tool_calls', None)}")
+
+    t1 = time.time()
+    simple_report = _summarize_text(ctx_.quick_thinking_llm, report, "市场技术分析报告" )
+    elapsed1 = round(time.time() - t1, 1)
+
+    print(f"\n{'='*60}")
+    print(f"✅ 技术面分析总结完成，耗时 {elapsed1}s，报告 {len(simple_report)} 字符")
+    print(f"{'='*60}")
+    if simple_report:
+        print(f"\n{simple_report}")
+    else:
+        print("\n⚠️ simple_report 为空！")
 
     return report
 
@@ -191,4 +207,4 @@ def test_timelyre():
 
 if __name__ == "__main__":
     _load_env_from_opencode_json()
-    test_timelyre()
+    test_market_analyst()
