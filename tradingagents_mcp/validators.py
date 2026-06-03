@@ -335,7 +335,7 @@ def extract_full_result(state: dict, llm=None) -> dict:
     result["investment_debate"] = {
         "bull_history": summarize(debate.get("bull_history", ""), "看涨分析师辩论发言"),
         "bear_history": summarize(debate.get("bear_history", ""), "看跌分析师辩论发言"),
-        "judge_decision": debate.get("judge_decision", ""),
+        "judge_decision": summarize(debate.get("judge_decision", ""), "多空辩论后研究主管的裁决发言"),
     }
 
     result["trader_investment_plan"] = summarize(
