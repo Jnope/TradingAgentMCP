@@ -32,9 +32,10 @@ cd TradingAgentsMCP
 # 创建虚拟环境
 conda create -n tradingagents python=3.12
 conda activate tradingagents
-
-# 安装依赖
 pip install .
+
+# 或使用 uv
+uv sync
 ```
 
 ## 配置
@@ -73,8 +74,16 @@ TRADINGAGENTS_LOG_LEVEL=INFO
 ## 启动 MCP 服务
 
 ```bash
+# 打包
+uv build --wheel
+
+# 全局安装
+pipx install ./dist/tradingagents-1.0.0-py3-none-any.whl   --force   --pip-args="--find-links ./wheelhouse"
+
 # stdio 模式（默认，适用于 Claude Desktop 等客户端）
 tradingagents-mcp
+# 或
+uv run
 # 或
 python -m tradingagents_mcp
 
@@ -89,14 +98,14 @@ python -m tradingagents_mcp check
 
 ## MCP 工具列表
 
-| 工具 | 功能 | 耗时 |
-|------|------|------|
-| `trading_agent` | 完整全流程分析（分析师→辩论→风险→决策） | 3-10分钟 |
-| `market_analyst` | 独立市场/技术分析 | ~30秒 |
-| `fundamentals_analyst` | 独立基本面分析 | ~30秒 |
-| `news_analyst` | 独立新闻分析 | ~30秒 |
-| `social_analyst` | 独立社交情绪分析 | ~30秒 |
-| `agent_status` | 健康检查与配置查询 | 即时 |
+| 工具 | 功能 | 耗时     |
+|------|------|--------|
+| `trading_agent` | 完整全流程分析（分析师→辩论→风险→决策） | 3-30分钟 |
+| `market_analyst` | 独立市场/技术分析 | 1~10分钟 |
+| `fundamentals_analyst` | 独立基本面分析 | 1~10分钟   |
+| `news_analyst` | 独立新闻分析 | 1~10分钟  |
+| `social_analyst` | 独立社交情绪分析 | 1~10分钟  |
+| `agent_status` | 健康检查与配置查询 | 即时     |
 
 ## Python 用法
 
