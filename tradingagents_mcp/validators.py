@@ -300,17 +300,23 @@ def build_response(
     }
 
 
+def _sanitize_quotes(text: str) -> str:
+    return text.replace('"', "'").replace("\u201c", "\u300c").replace("\u201d", "\u300d")
+
+
 def _summarize_text(llm, text: str, role_hint: str, max_length: int = 1000) -> str:
     if not text or len(text) <= max_length:
-        return text
+        return _sanitize_quotes(text)
     prompt = (
-        f"请将以下{role_hint}浓缩为简短摘要（200字以内），保留核心结论和关键数据，不要添加额外解释：\n\n{text}"
+        f"请将以下{role_hint}浓缩为简短摘要（200字以内），保留核心结论和关键数据，不要添加额外解释：\n\n{text}\n\n"
+        "重要：摘要中绝对不要使用英文双引号(\")，请用中文单引号或「」代替。"
     )
     try:
         resp = llm.invoke(prompt)
-        return resp.content if hasattr(resp, "content") else str(resp)
+        content = resp.content if hasattr(resp, "content") else str(resp)
+        return _sanitize_quotes(content)
     except Exception:
-        return text[:max_length] + "..."
+        return _sanitize_quotes(text[:max_length]) + "..."
 
 
 def extract_full_result(state: dict, llm=None) -> dict:
@@ -319,7 +325,7 @@ def extract_full_result(state: dict, llm=None) -> dict:
     if company_name:
         result["company_name"] = company_name
 
-    summarize = lambda text, hint: _summarize_text(llm, text, hint) if llm else text
+    summarize = lambda text, hint: _summarize_text(llm, text, hint) if llm else _sanitize_quotes(text)
 
     report_hints = {
         "market_report": "市场技术分析报告",
@@ -347,13 +353,13 @@ def extract_full_result(state: dict, llm=None) -> dict:
         "aggressive_history": summarize(risk.get("aggressive_history", ""), "激进风险分析师辩论发言"),
         "conservative_history": summarize(risk.get("conservative_history", ""), "保守风险分析师辩论发言"),
         "neutral_history": summarize(risk.get("neutral_history", ""), "中性风险分析师辩论发言"),
-        "judge_decision": risk.get("judge_decision", ""),
+        "judge_decision": _sanitize_quotes(risk.get("judge_decision", "")),
     }
 
     result["investment_plan"] = summarize(
         state.get("investment_plan", ""), "投资计划"
     )
-    result["final_trade_decision"] = state.get("final_trade_decision", "")
+    result["final_trade_decision"] = _sanitize_quotes(state.get("final_trade_decision", ""))
 
     return result
 
@@ -364,27 +370,27 @@ def extract_detail_result(state: dict) -> dict:
     if company_name:
         result["company_name"] = company_name
     for key in ["market_report", "fundamentals_report", "sentiment_report", "news_report"]:
-        result[key] = state.get(key, "")
+        result[key] = _sanitize_quotes(state.get(key, ""))
 
     debate = state.get("investment_debate_state") or {}
     result["investment_debate"] = {
-        "bull_history": debate.get("bull_history", ""),
-        "bear_history": debate.get("bear_history", ""),
-        "judge_decision": debate.get("judge_decision", ""),
+        "bull_history": _sanitize_quotes(debate.get("bull_history", "")),
+        "bear_history": _sanitize_quotes(debate.get("bear_history", "")),
+        "judge_decision": _sanitize_quotes(debate.get("judge_decision", "")),
     }
 
-    result["trader_investment_plan"] = state.get("trader_investment_plan", "")
+    result["trader_investment_plan"] = _sanitize_quotes(state.get("trader_investment_plan", ""))
 
     risk = state.get("risk_debate_state") or {}
     result["risk_debate"] = {
-        "aggressive_history": risk.get("aggressive_history", ""),
-        "conservative_history": risk.get("conservative_history", ""),
-        "neutral_history": risk.get("neutral_history", ""),
-        "judge_decision": risk.get("judge_decision", ""),
+        "aggressive_history": _sanitize_quotes(risk.get("aggressive_history", "")),
+        "conservative_history": _sanitize_quotes(risk.get("conservative_history", "")),
+        "neutral_history": _sanitize_quotes(risk.get("neutral_history", "")),
+        "judge_decision": _sanitize_quotes(risk.get("judge_decision", "")),
     }
 
-    result["investment_plan"] = state.get("investment_plan", "")
-    result["final_trade_decision"] = state.get("final_trade_decision", "")
+    result["investment_plan"] = _sanitize_quotes(state.get("investment_plan", ""))
+    result["final_trade_decision"] = _sanitize_quotes(state.get("final_trade_decision", ""))
 
     return result
 
