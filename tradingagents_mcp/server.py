@@ -12,6 +12,7 @@ TradingAgents A股 MCP Agent Server
 
 import asyncio
 import logging
+import os
 import time
 from typing import Optional
 
@@ -33,10 +34,15 @@ from tradingagents_mcp.shared_context import get_shared_ctx
 
 logger = logging.getLogger("mcp_server")
 
-mcp = FastMCP(
-    "TradingAgents-A股",
+_mcp_kwargs = dict(
+    name="TradingAgents-A股",
     instructions="AI金融交易分析Agent — A股多Agent协作分析和单分析师独立调用",
 )
+if os.getenv("MCP_TRANSPORT", "stdio") == "streamable-http":
+    _mcp_kwargs["host"] = os.getenv("MCP_HOST", "0.0.0.0")
+    _mcp_kwargs["port"] = int(os.getenv("MCP_PORT", "9000"))
+
+mcp = FastMCP(**_mcp_kwargs)
 
 
 _ANALYST_LABELS = {

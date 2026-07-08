@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[codz]
+*$py.class
+*.so
+.eggs/
+*.egg-info/
+.venv/
+env/
+venv/
+.uv/
+uv.lock
+
+# Build artifacts
+build/
+dist/
+#*.whl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs & cache
+*.log
+.cache/
+data_cache/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Docker
+docker/
+
+# Docs
+*.md
+!README.md
+CHANGELOG.md
+re-design.md
+solution-prd.md
+本地数据库字典.pdf
+
+# Others
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+debug_*.py

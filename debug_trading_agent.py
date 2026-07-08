@@ -196,9 +196,19 @@ def test_timelyre():
         )
         print("TransMatrix DatabaseConn 初始化成功")
         import pandas as pd
-        result: pd.DataFrame = _db_conn.query_as_df("stock_bar_1day", query=f"SELECT `trade_day`, `open`, `high`, `low`, `close`, `volume`, `turnover`, `vwap`, `factor` "
-        f"FROM `stock_bar_1day` "
-        f"WHERE `code` = '688031.SH' AND `datetime` >= '2026-01-01 00:00:00' AND `datetime` < '2026-05-21 00:00:00' ", combine_ignore_index=True)
+
+        result: pd.DataFrame = _db_conn.query_as_df("sw_industry", query="""SELECT a.*
+FROM `sw_industry` a
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `sw_industry` b
+    WHERE b.code = a.code 
+      AND b.datetime > a.datetime
+)""")
+        result.to_csv('industry.csv', index=False, encoding='utf-8-sig')
+        # result: pd.DataFrame = _db_conn.query_as_df("stock_bar_1day", query=f"SELECT `trade_day`, `open`, `high`, `low`, `close`, `volume`, `turnover`, `vwap`, `factor` "
+        # f"FROM `stock_bar_1day` "
+        # f"WHERE `code` = '688031.SH' AND `datetime` >= '2026-01-01 00:00:00' AND `datetime` < '2026-05-21 00:00:00' ", combine_ignore_index=True)
         print(len(result))
     except Exception as e:
         print(f"DatabaseConn初始化失败: {e}")
@@ -207,4 +217,5 @@ def test_timelyre():
 
 if __name__ == "__main__":
     _load_env_from_opencode_json()
-    test_market_analyst()
+    # test_market_analyst()
+    test_timelyre()

@@ -123,9 +123,7 @@ def _run_server():
 
     transport = os.getenv("MCP_TRANSPORT", "stdio")
     if transport == "streamable-http":
-        host = os.getenv("MCP_HOST", "0.0.0.0")
-        port = int(os.getenv("MCP_PORT", "9000"))
-        mcp.run(transport="streamable-http", host=host, port=port)
+        mcp.run(transport="streamable-http")
     else:
         mcp.run(transport="stdio")
 
