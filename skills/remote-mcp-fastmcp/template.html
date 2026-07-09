@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TradingAgents - AI 投研分析</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+  }
+
+  /* ===== 主容器 ===== */
+  .trade {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px 20px 48px;
+  }
+
+  /* ===== 标题栏 ===== */
+  .title-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .title-bar .bot-icon { color: #7c3aed; font-size: 20px; flex-shrink: 0; }
+  .title-bar .name { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+  .title-bar .desc { font-size: 13px; color: #999; }
+
+  /* ===== 分析主体 ===== */
+  .entity-line {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0;
+  }
+
+  /* ===== 分层卡片 ===== */
+  .layer-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #f0f0f0;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .layer-card > .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-bottom: 1px solid #f5f5f5;
+    border-left: 4px solid #3b82f6;
+  }
+  .layer-card > .card-header .card-title { font-size: 16px; font-weight: 600; }
+  .layer-card > .card-header .card-desc { font-size: 12px; color: #999; margin-top: 2px; }
+  .layer-card > .card-body { padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ===== 内嵌小卡片（点击可展开） ===== */
+  .inner-card {
+    background: #fafafa;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow .2s, border-color .2s;
+  }
+  .inner-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); border-color: #e0e0e0; }
+  .inner-card .inner-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .inner-card .inner-header svg { flex-shrink: 0; }
+  .inner-card .inner-body {
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #666;
+    max-height: 80px;
+    overflow: hidden;
+    position: relative;
+  }
+  .inner-card .inner-body::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 30px;
+    background: linear-gradient(transparent, #fafafa);
+  }
+
+  /* 全展开的大卡片（投资计划） */
+  .layer-card.highlight .card-body .inner-body {
+    max-height: none;
+    background: none;
+  }
+  .layer-card.highlight .card-body .inner-body::after { display: none; }
+
+  /* ===== 颜色变量 ===== */
+  .bl-blue   { border-left-color: #3b82f6 !important; }
+  .bl-amber  { border-left-color: #f59e0b !important; }
+  .bl-green  { border-left-color: #10b981 !important; }
+  .bl-red    { border-left-color: #ef4444 !important; }
+  .bl-purple { border-left-color: #7c3aed !important; }
+
+  /* ===== 抽屉 Drawer ===== */
+  .drawer-mask {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 6999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s;
+  }
+  .drawer-mask.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed;
+    top: 0; right: 0;
+    width: 760px; max-width: 100vw;
+    height: 100vh;
+    background: #fff;
+    z-index: 7000;
+    transform: translateX(100%);
+    transition: transform .3s ease;
+    display: flex; flex-direction: column;
+    box-shadow: -4px 0 16px rgba(0,0,0,.1);
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 16px; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .drawer-close {
+    width: 32px; height: 32px;
+    border: none; background: none;
+    font-size: 20px; cursor: pointer;
+    color: #999; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .2s;
+  }
+  .drawer-close:hover { background: #f5f5f5; }
+  .drawer-body {
+    flex: 1; overflow-y: auto;
+    padding: 24px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: #444;
+    white-space: pre-wrap;
+  }
+  .icon-svg { width: 20px; height: 20px; display: inline-flex; }
+</style>
+</head>
+<body>
+
+<!-- ===================== 模板数据（由 render_report.py 替换） ===================== -->
+<script>
+const tpl = {
+  title:                `AI 多智能体投研分析`,
+  desc:                 `多角色协作 · 对抗式推理 · 可执行决策`,
+  entity:               `分析主体：___COMPANY_NAME___ (___SYMBOL___)`,
+
+  market_report:        `___MARKET_REPORT___`,
+  fundamentals_report:  `___FUNDAMENTALS_REPORT___`,
+  news_report:          `___NEWS_REPORT___`,
+  sentiment_report:     `___SENTIMENT_REPORT___`,
+
+  bull_history:         `___BULL_HISTORY___`,
+  bear_history:         `___BEAR_HISTORY___`,
+  judge_decision:       `___JUDGE_DECISION___`,
+
+  trader_investment_plan: `___TRADER_INVESTMENT_PLAN___`,
+
+  aggressive_history:   `___AGGRESSIVE_HISTORY___`,
+  conservative_history: `___CONSERVATIVE_HISTORY___`,
+  neutral_history:      `___NEUTRAL_HISTORY___`,
+  risk_judge_decision:  `___RISK_JUDGE_DECISION___`,
+
+  investment_plan:      `___INVESTMENT_PLAN___`,
+  final_trade_decision: `___FINAL_TRADE_DECISION___`,
+};
+</script>
+
+<!-- ===================== 页面结构 ===================== -->
+<div class="trade" id="app">
+
+  <!-- 标题栏 -->
+  <div class="title-bar">
+    <svg class="bot-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#7c3aed">
+      <rect x="4" y="8" width="16" height="12" rx="2"/>
+      <line x1="12" y1="2" x2="12" y2="8"/>
+      <circle cx="9" cy="14" r="1.2" fill="currentColor"/>
+      <circle cx="15" cy="14" r="1.2" fill="currentColor"/>
+      <line x1="2" y1="13" x2="4" y2="13"/>
+      <line x1="20" y1="13" x2="22" y2="13"/>
+    </svg>
+    <div class="name" id="tpl-title"></div>
+    <div class="desc" id="tpl-desc"></div>
+  </div>
+
+  <!-- 分析主体 -->
+  <div class="entity-line" id="tpl-entity"></div>
+
+  <!-- ============ 分析师 ============ -->
+  <div class="layer-card">
+    <div class="card-header bl-blue">
+      <div>
+        <div class="card-title">分析师</div>
+        <div class="card-desc">从基本面、技术面、情绪与新闻四条线索生成一手观点</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="inner-card" onclick="openDrawer('技术分析', 'market_report')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><line x1="6" y1="20" x2="6" y2="10"/><line x1="6" y1="8" x2="6" y2="4"/><rect x="4.5" y="10" width="3" height="6" fill="#3b82f6" opacity="0.3"/><line x1="12" y1="20" x2="12" y2="14"/><line x1="12" y1="12" x2="12" y2="6"/><rect x="10.5" y="12" width="3" height="4" fill="#3b82f6" opacity="0.3"/><line x1="18" y1="20" x2="18" y2="16"/><line x1="18" y1="14" x2="18" y2="8"/><rect x="16.5" y="14" width="3" height="3" fill="#3b82f6" opacity="0.3"/></svg><span>技术分析</span></div>
+        <div class="inner-body" id="tpl-market"></div>
+      </div>
+      <div class="inner-card" onclick="openDrawer('基本面分析', 'fundamentals_report')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><rect x="3" y="14" width="4" height="7" fill="#3b82f6" opacity="0.3"/><rect x="10" y="9" width="4" height="12" fill="#3b82f6" opacity="0.3"/><rect x="17" y="4" width="4" height="17" fill="#3b82f6" opacity="0.3"/></svg><span>基本面分析</span></div>
+        <div class="inner-body" id="tpl-fundamentals"></div>
+      </div>
+      <div class="inner-card" onclick="openDrawer('新闻分析', 'news_report')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M4 4h12v16H4z"/><path d="M16 4h4v16h-4"/><line x1="6" y1="8" x2="14" y2="8"/><line x1="6" y1="12" x2="14" y2="12"/><line x1="6" y1="16" x2="10" y2="16"/></svg><span>新闻分析</span></div>
+        <div class="inner-body" id="tpl-news"></div>
+      </div>
+      <div class="inner-card" onclick="openDrawer('情绪分析', 'sentiment_report')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M12 3l1.9 5.8H20l-5 3.6 1.9 5.8L12 14.6 7.1 18.2 9 12.4 4 8.8h6.1z"/></svg><span>情绪分析</span></div>
+        <div class="inner-body" id="tpl-sentiment"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 多空辩论 ============ -->
+  <div class="layer-card">
+    <div class="card-header bl-amber">
+      <div>
+        <div class="card-title">多空辩论</div>
+        <div class="card-desc">看涨与看跌研究员对同一组证据进行对抗式推理</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="inner-card" onclick="openDrawer('看涨', 'bull_history')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg><span>看涨</span></div>
+        <div class="inner-body" id="tpl-bull"></div>
+      </div>
+      <div class="inner-card" onclick="openDrawer('看跌', 'bear_history')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg><span>看跌</span></div>
+        <div class="inner-body" id="tpl-bear"></div>
+      </div>
+      <div class="inner-card" onclick="openDrawer('研究主管', 'judge_decision')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg><span>研究主管</span></div>
+        <div class="inner-body" id="tpl-judge"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 投资计划 ============ -->
+  <div class="layer-card highlight" onclick="openDrawer('投资计划', 'trader_investment_plan')" style="cursor:pointer;">
+    <div class="card-header bl-green">
+      <div>
+        <div class="card-title">投资计划</div>
+        <div class="card-desc">把研究结论翻译成仓位、价格、执行节奏与止损纪律</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="inner-body" id="tpl-trader-plan" style="background:none;max-height:90px;"></div>
+    </div>
+  </div>
+
+  <!-- ============ 风险辩论 ============ -->
+  <div class="layer-card">
+    <div class="card-header bl-red">
+      <div>
+        <div class="card-title">风险辩论</div>
+        <div class="card-desc">不同风险偏好的风控员给出约束边界与异常处理方案</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="inner-card" onclick="openDrawer('激进', 'aggressive_history')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 2L3 7v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V7l-9-5z"/><path d="M12 8v4M12 16h.01"/></svg><span>激进</span></div>
+        <div class="inner-body" id="tpl-aggressive"></div>
+      </div>
+      <div class="inner-card" onclick="openDrawer('保守', 'conservative_history')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 2L3 7v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V7l-9-5z"/><polyline points="9 12 11 14 15 10"/></svg><span>保守</span></div>
+        <div class="inner-body" id="tpl-conservative"></div>
+      </div>
+      <div class="inner-card" onclick="openDrawer('中性', 'neutral_history')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 2L3 7v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V7l-9-5z"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span>中性</span></div>
+        <div class="inner-body" id="tpl-neutral"></div>
+      </div>
+      <div class="inner-card" onclick="openDrawer('投资组合经理', 'risk_judge_decision')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 2L3 7v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V7l-9-5z"/><circle cx="12" cy="10" r="2.5"/><path d="M8 16c0-2 2-3 4-3s4 1 4 3"/></svg><span>投资组合经理</span></div>
+        <div class="inner-body" id="tpl-risk-judge"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 决策 ============ -->
+  <div class="layer-card">
+    <div class="card-header bl-purple">
+      <div>
+        <div class="card-title">决策</div>
+        <div class="card-desc">投资组合经理整合观点，形成可执行组合动作</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="inner-card" onclick="openDrawer('投资计划', 'investment_plan')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><rect x="4" y="4" width="16" height="18" rx="2"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg><span>投资计划</span></div>
+        <div class="inner-body" id="tpl-invest-plan"></div>
+      </div>
+      <div class="inner-card" onclick="openDrawer('最终决策', 'final_trade_decision')">
+        <div class="inner-header"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 12 15 16 10"/></svg><span>最终决策</span></div>
+        <div class="inner-body" id="tpl-final"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== 抽屉 ===================== -->
+<div class="drawer-mask" id="drawer-mask" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <span id="drawer-title">详情</span>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<!-- ===================== 脚本 ===================== -->
+<script>
+  function fillTemplate() {
+    setText('tpl-title',   tpl.title);
+    setText('tpl-desc',    tpl.desc);
+    setText('tpl-entity',  tpl.entity);
+    setText('tpl-market',         tpl.market_report);
+    setText('tpl-fundamentals',   tpl.fundamentals_report);
+    setText('tpl-news',           tpl.news_report);
+    setText('tpl-sentiment',      tpl.sentiment_report);
+    setText('tpl-bull',           tpl.bull_history);
+    setText('tpl-bear',           tpl.bear_history);
+    setText('tpl-judge',          tpl.judge_decision);
+    setText('tpl-trader-plan',    tpl.trader_investment_plan);
+    setText('tpl-aggressive',     tpl.aggressive_history);
+    setText('tpl-conservative',   tpl.conservative_history);
+    setText('tpl-neutral',        tpl.neutral_history);
+    setText('tpl-risk-judge',     tpl.risk_judge_decision);
+    setText('tpl-invest-plan',    tpl.investment_plan);
+    setText('tpl-final',          tpl.final_trade_decision);
+  }
+  function setText(id, val) { document.getElementById(id).textContent = val || ''; }
+  function openDrawer(title, key) {
+    const val = tpl[key];
+    if (!val) return;
+    document.getElementById('drawer-title').textContent = title;
+    document.getElementById('drawer-body').textContent  = val;
+    document.getElementById('drawer').classList.add('open');
+    document.getElementById('drawer-mask').classList.add('open');
+  }
+  function closeDrawer() {
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('drawer-mask').classList.remove('open');
+  }
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeDrawer(); });
+  fillTemplate();
+</script>
+
+</body>
+</html>
